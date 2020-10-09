@@ -178,6 +178,16 @@ static struct pt slot_operation_pt;
 static PT_THREAD(tsch_tx_slot(struct pt *pt, struct rtimer *t));
 static PT_THREAD(tsch_rx_slot(struct pt *pt, struct rtimer *t));
 
+
+//char gMsg[256];
+//void tsch_log(char* data)
+//{
+//	rtimer_clock_t now = RTIMER_NOW();
+//	sprintf(gMsg, "%9ld ",now);
+//	strcpy(gMsg+strlen(gMsg),data);
+//	labscim_log(gMsg,"TSCH");
+//}
+
 /*---------------------------------------------------------------------------*/
 /* TSCH locking system. TSCH is locked during slot operations */
 
@@ -993,6 +1003,7 @@ PT_THREAD(tsch_rx_slot(struct pt *pt, struct rtimer *t))
 /*---------------------------------------------------------------------------*/
 /* Protothread for slot operation, called from rtimer interrupt
  * and scheduled from tsch_schedule_slot_operation */
+uint8_t str[64];
 static
 PT_THREAD(tsch_slot_operation(struct rtimer *t, void *ptr))
 {
@@ -1045,6 +1056,8 @@ PT_THREAD(tsch_slot_operation(struct rtimer *t, void *ptr))
         NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, tsch_current_channel);
         /* Turn the radio on already here if configured so; necessary for radios with slow startup */
         tsch_radio_on(TSCH_RADIO_CMD_ON_START_OF_TIMESLOT);
+//        sprintf(str,"radio on. ch%d\n",tsch_current_channel);
+//        tsch_log(str);
         /* Decide whether it is a TX/RX/IDLE or OFF slot */
         /* Actual slot operation */
         if(current_packet != NULL) {

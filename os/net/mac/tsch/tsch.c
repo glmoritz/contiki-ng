@@ -66,6 +66,8 @@
 #error TSCH: FRAME802154_VERSION must be at least FRAME802154_IEEE802154_2015
 #endif
 
+extern uint16_t node_id;
+
 /* Log configuration */
 #include "sys/log.h"
 #define LOG_MODULE "TSCH"
@@ -108,6 +110,9 @@ const linkaddr_t tsch_eb_address = { { 0, 0, 0, 0, 0, 0, 0, 0 } };
 const linkaddr_t tsch_broadcast_address = { { 0xff, 0xff } };
 const linkaddr_t tsch_eb_address = { { 0, 0 } };
 #endif /* LINKADDR_SIZE == 8 */
+
+int64_t gAssociationSignal=-1;
+int64_t gDisassociationSignal=-1;
 
 /* Is TSCH started? */
 int tsch_is_started = 0;
@@ -569,8 +574,10 @@ tsch_start_coordinator(void)
 void
 tsch_disassociate(void)
 {
+
   if(tsch_is_associated == 1) {
-    tsch_is_associated = 0;
+	  LabscimSignalEmit(gDisassociationSignal,(double)node_id);
+	  tsch_is_associated = 0;
     tsch_adaptive_timesync_reset();
     process_poll(&tsch_process);
   }
@@ -731,6 +738,7 @@ tsch_associate(const struct input_packet *input_eb, rtimer_clock_t timestamp)
 #endif
 
       tsch_association_count++;
+      LabscimSignalEmit(gAssociationSignal,(double)node_id);
       LOG_INFO("association done (%u), sec %u, PAN ID %x, asn-%x.%lx, jp %u, timeslot id %u, hopping id %u, slotframe len %u with %u links, from ",
              tsch_association_count,
              tsch_is_pan_secured,
@@ -799,7 +807,7 @@ PT_THREAD(tsch_scan(struct pt *pt))
     if(!is_packet_pending && NETSTACK_RADIO.receiving_packet()) {
       /* If we are currently receiving a packet, wait until end of reception */
       t0 = RTIMER_NOW();
-      RTIMER_BUSYWAIT_UNTIL_ABS((is_packet_pending = NETSTACK_RADIO.pending_packet()), t0, RTIMER_SECOND / 100);
+      RTIMER_BUSYWAIT_UNTIL_ABS((is_packet_pending = NETSTACK_RADIO.pending_packet()), t0, RTIMER_SECOND / 10);
     }
 
     if(is_packet_pending) {
@@ -972,6 +980,17 @@ tsch_init(void)
   radio_value_t radio_max_payload_len;
 
   rtimer_clock_t t;
+
+  if(gAssociationSignal<0)
+  {
+	  gAssociationSignal = LabscimSignalRegister("NodeAssociated");
+  }
+
+  if(gDisassociationSignal<0)
+    {
+	  gDisassociationSignal = LabscimSignalRegister("NodeDisassociated");
+    }
+
 
   /* Check that the platform provides a TSCH timeslot timing template */
   if(TSCH_DEFAULT_TIMESLOT_TIMING == NULL) {

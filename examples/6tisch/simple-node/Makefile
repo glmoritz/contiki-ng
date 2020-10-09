@@ -4,9 +4,10 @@ all: $(CONTIKI_PROJECT)
 PLATFORMS_EXCLUDE = sky nrf52dk native simplelink
 
 CONTIKI=../../..
+#CCFLAGS += -DDEBUG -g
 
  # force Orchestra from command line
-MAKE_WITH_ORCHESTRA ?= 0
+MAKE_WITH_ORCHESTRA ?= 1
 # force Security from command line
 MAKE_WITH_SECURITY ?= 0
  # print #routes periodically, used for regression tests
@@ -51,5 +52,7 @@ endif
 ifeq ($(MAKE_WITH_PERIODIC_ROUTES_PRINT),1)
 CFLAGS += -DWITH_PERIODIC_ROUTES_PRINT=1
 endif
+
+PROJECT_SOURCEFILES += labscim_helper.c
 
 include $(CONTIKI)/Makefile.include

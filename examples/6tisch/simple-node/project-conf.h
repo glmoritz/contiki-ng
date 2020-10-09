@@ -69,13 +69,43 @@
 /************* Other system configuration **************/
 /*******************************************************/
 
-/* Logging */
+///* Logging */
+//#define LOG_CONF_LEVEL_RPL                         LOG_LEVEL_NONE
+//#define LOG_CONF_LEVEL_TCPIP                       LOG_LEVEL_NONE
+//#define LOG_CONF_LEVEL_IPV6                        LOG_LEVEL_NONE
+//#define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_NONE
+//#define LOG_CONF_LEVEL_MAC                         LOG_LEVEL_NONE
+//#define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_NONE
+//#define TSCH_LOG_CONF_PER_SLOT                     0
+
+#define TSCH_CONF_DEFAULT_HOPPING_SEQUENCE TSCH_HOPPING_SEQUENCE_4_4
+
 #define LOG_CONF_LEVEL_RPL                         LOG_LEVEL_INFO
-#define LOG_CONF_LEVEL_TCPIP                       LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_IPV6                        LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_WARN
+#define LOG_CONF_LEVEL_TCPIP                       LOG_LEVEL_INFO
+#define LOG_CONF_LEVEL_IPV6                        LOG_LEVEL_INFO
+#define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_INFO
 #define LOG_CONF_LEVEL_MAC                         LOG_LEVEL_INFO
-#define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_DBG
+#define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_INFO
 #define TSCH_LOG_CONF_PER_SLOT                     1
+
+
+
+
+
+
+//#define TSCH_DEBUG_INIT() tsch_log("init\n")
+//#define TSCH_DEBUG_INTERRUPT() tsch_log("irq\n")
+//#define TSCH_DEBUG_RX_EVENT() tsch_log("rx\n")
+//#define TSCH_DEBUG_TX_EVENT() tsch_log("tx\n")
+//#define TSCH_DEBUG_SLOT_START() tsch_log("slot start\n")
+//#define TSCH_DEBUG_SLOT_END() tsch_log("slot end\n")
+
+#define QUEUEBUF_CONF_NUM 32
+#define NBR_TABLE_CONF_MAX_NEIGHBORS 100
+#define NETSTACK_MAX_ROUTE_ENTRIES 100
+#define UIP_CONF_UDP_CONNS 100
+
+#define TSCH_CONF_ASSOCIATION_POLL_FREQUENCY 500
+//#ifndef TSCH_CONF_CHANNEL_SCAN_DURATION
 
 #endif /* PROJECT_CONF_H_ */

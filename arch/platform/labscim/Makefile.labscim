@@ -1,0 +1,35 @@
+ifndef CONTIKI
+  $(error CONTIKI not defined! You must specify where CONTIKI resides!)
+endif
+
+
+CONTIKI_TARGET_DIRS = . dev
+CONTIKI_TARGET_MAIN = ${addprefix $(OBJECTDIR)/,contiki-main.o}
+
+CONTIKI_TARGET_SOURCEFILES += platform.c clock.c xmem.c labscim_socket.c labscim_linked_list.c labscim_dbg.c labscim_sun_radio.c prop-mode-tx-power.c labscim_sun_50kbps_tsch.c shared_mutex.c
+CONTIKI_TARGET_SOURCEFILES += cfs-posix.c cfs-posix-dir.c buttons.c
+
+ifeq ($(HOST_OS),Linux)
+TARGET_LIBFILES += -lrt
+endif
+
+CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES)
+CFLAGS += -DIS_LABSCIM_CLIENT=1
+#CFLAGS += -DLABSCIM_LOG_COMMANDS
+CFLAGS += -DLABSCIM_RADIO_SUN=1
+### this is done to set rtimer guard to zero
+###CFLAGS += -DCONTIKI_TARGET_COOJA=1
+
+
+
+
+MODULES += os/lib/dbg-io
+
+.SUFFIXES:
+
+# Enable nullmac by default
+MAKE_MAC ?= MAKE_MAC_NULLMAC
+
+### Define the CPU directory
+CONTIKI_CPU = $(CONTIKI_NG_RELOC_CPU_DIR)/labscim
+include $(CONTIKI_CPU)/Makefile.labscim
