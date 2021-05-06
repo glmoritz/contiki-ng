@@ -111,7 +111,7 @@
 
 /* 10 times per second */
 #ifndef TSCH_CONF_CHANNEL_SCAN_DURATION
-#define TSCH_CONF_CHANNEL_SCAN_DURATION (CLOCK_SECOND / 10)
+#define TSCH_CONF_CHANNEL_SCAN_DURATION (1800*CLOCK_SECOND)
 #endif
 
 /* Increase this from the default 100 to improve TSCH association speed on this platform */

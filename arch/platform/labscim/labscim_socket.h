@@ -41,25 +41,23 @@ typedef struct {
 //public API
 
 #if IS_LABSCIM_CLIENT
-
     uint32_t protocol_yield(buffer_circ_t* buf);
     uint32_t set_time_event(buffer_circ_t* buf, uint32_t time_event_id, uint16_t is_relative, uint64_t time_us);
     uint32_t cancel_time_event(buffer_circ_t* buf, uint32_t cancel_sequence_number);
     uint32_t print_message(buffer_circ_t* buf, uint16_t message_type, uint8_t* message, uint32_t msglen);
     uint32_t radio_command(buffer_circ_t* buf, uint16_t radio_command, uint8_t* radio_struct, uint32_t radio_struct_len);
+    uint32_t get_random(buffer_circ_t* buf, uint8_t distribution_type, union random_number param_1, union random_number param_2, union random_number param_3);
     int32_t labscim_socket_connect(uint8_t* server_address, uint32_t server_port, buffer_circ_t* buf);
     uint32_t node_is_ready(buffer_circ_t* buf);
-
+    uint32_t signal_register(buffer_circ_t* buf, uint8_t* signal_name);
+    uint32_t signal_emit(buffer_circ_t* buf, uint64_t signal_id, double value);
 #else
-
     uint32_t protocol_boot(buffer_circ_t* buf, void* message, size_t message_size);
     uint32_t time_event(buffer_circ_t* buf, uint32_t sequence_number, uint32_t time_event_id, uint64_t current_time_us);
     uint32_t radio_response(buffer_circ_t* buf, uint16_t radio_response, uint64_t current_time, void* radio_struct, size_t radio_struct_len, uint32_t sequence_number);
     uint32_t signal_register_response(buffer_circ_t* buf, uint32_t sequence_number, uint64_t signal_id);
     int32_t labscim_socket_connect(uint32_t server_port, buffer_circ_t* buf );
-    uint32_t signal_register(buffer_circ_t* buf, uint8_t* signal_name);
-    uint32_t signal_emit(buffer_circ_t* buf, uint64_t signal_id, double value);
-
+    uint32_t send_random(buffer_circ_t* buf, union random_number result, uint64_t sequence_number);
 #endif
 
 void labscim_set_send_command_callback(void (*Callback)(void) );

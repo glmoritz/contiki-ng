@@ -18,3 +18,4 @@ struct contiki_node_setup
 
 
 #endif /* LABSCIM_CONTIKING_SETUP_H_ */
+

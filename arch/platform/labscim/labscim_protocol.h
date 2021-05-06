@@ -78,6 +78,21 @@ struct labscim_signal_register_response
 } __attribute__((packed));
 
 
+union random_number {
+	double double_number;
+  	int64_t int_number;  
+};
+
+/**
+ * This message is the response for a get random command - the response is converted to double and int and the programmer must use the most suited depending on the distribution type */
+#define LABSCIM_GET_RANDOM_RESPONSE (0xA8A9)
+struct labscim_signal_get_random_response
+{
+    struct labscim_protocol_header hdr;
+    union random_number result; /**< This is the pseudorandom number of the requested distribution, converted to double*/	
+} __attribute__((packed));
+
+
 //Client->Server Messages
 
 /**
@@ -173,5 +188,42 @@ struct labscim_signal_emit
 } __attribute__((packed));
 
 
+/**
+ * This message requests a random number for omnet engine
+ */
+#define LABSCIM_GET_RANDOM (0xA8A8)
+struct labscim_get_random
+{
+    struct labscim_protocol_header hdr;
+    uint8_t distribution_type; /**< See table below>*/
+    union random_number param_1; /**< first parameter of the requested distribution - if an integer is requested, floor will be used*/
+	union random_number param_2; /**< second parameter of the requested distribution - if an integer is requested, floor will be used*/
+	union random_number param_3; /**< third parameter of the requested distribution - if an integer is requested, floor will be used*/
+} __attribute__((packed));
+
+/*
+0 - uniform(a, b)	uniform distribution in the range [param_1,param_2)
+1 - exponential(mean)	exponential distribution with the given mean
+2 - normal(mean, stddev)	normal distribution with the given mean and standard deviation
+3 - truncnormal(mean, stddev)	normal distribution truncated to nonnegative values
+4 - gamma_d(alpha, beta)	gamma distribution with parameters alpha>0, beta>0
+5 - beta(alpha1, alpha2)	beta distribution with parameters alpha1>0, alpha2>0
+6 - erlang_k(k, mean)	Erlang distribution with k>0 phases and the given mean
+7 - chi_square(k)	chi-square distribution with k>0 degrees of freedom
+8 - student_t(i)	student-t distribution with i>0 degrees of freedom
+9 - cauchy(a, b)	Cauchy distribution with parameters a,b where b>0
+10 - triang(a, b, c)	triangular distribution with parameters a<=b<=c, a!=c
+11 - lognormal(m, s)	lognormal distribution with mean m and variance s>0
+12 - weibull(a, b)	Weibull distribution with parameters a>0, b>0
+13 - pareto_shifted(a, b, c)	generalized Pareto distribution with parameters a, b and shift c
+
+Discrete distributions
+14 - intuniform(a, b)	uniform integer from a..b
+15 - bernoulli(p)	result of a Bernoulli trial with probability 0<=p<=1 (1 with probability p and 0 with probability (1-p))
+16 - binomial(n, p)	binomial distribution with parameters n>=0 and 0<=p<=1
+17 - geometric(p)	geometric distribution with parameter 0<=p<=1
+18 - negbinomial(n, p)	negative binomial distribution with parameters n>0 and 0<=p<=1
+19 - poisson(lambda)	Poisson distribution with parameter lambda
+*/
 
 #endif /* LABSCIM_PROTOCOL_H_ */

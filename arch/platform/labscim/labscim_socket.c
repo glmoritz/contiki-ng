@@ -129,7 +129,7 @@ void labscim_buffer_init(buffer_circ_t* buf, char* buffer_name, size_t MemorySiz
 #else
 	char* mutex_name;
 	uint64_t name_size = strlen(buffer_name);
-	buf->name = (char*)malloc(name_size);
+	buf->name = (char*)malloc(name_size+1);
 	if(buf->name == NULL)
 	{
 		perror("\n Malloc error \n");
@@ -199,9 +199,6 @@ void labscim_buffer_deinit(buffer_circ_t* buf, uint8_t del)
 }
 
 #if IS_LABSCIM_CLIENT
-
-//this functions must be provided by the user
-struct labscim_protocol_client_callbacks* CLIENT_CALLBACK;
 
 uint32_t node_is_ready(buffer_circ_t* buf)
 {
@@ -352,6 +349,22 @@ uint32_t radio_command(buffer_circ_t* buf, uint16_t radio_command, uint8_t* radi
 	return ret;
 }
 
+uint32_t get_random(buffer_circ_t* buf, uint8_t distribution_type, union random_number param_1, union random_number param_2, union random_number param_3)
+{
+	struct labscim_get_random gr;
+	gr.hdr.labscim_protocol_magic_number = LABSCIM_PROTOCOL_MAGIC_NUMBER;
+	gr.hdr.labscim_protocol_code = LABSCIM_GET_RANDOM;
+	gr.hdr.message_size = sizeof(struct labscim_get_random);
+	gr.hdr.sequence_number = labscim_protocol_get_new_sequence_number();
+	gr.hdr.request_sequence_number = 0;
+	gr.distribution_type = distribution_type;
+	gr.param_1 = param_1;
+	gr.param_2 = param_2;
+	gr.param_3 = param_3;	
+	labscim_socket_send(buf, (void *)&gr, sizeof(struct labscim_get_random));
+	return gr.hdr.sequence_number;
+}
+
 int32_t labscim_socket_connect(uint8_t* server_address, uint32_t server_port, buffer_circ_t* buf)
 {
 
@@ -389,10 +402,10 @@ int32_t labscim_socket_connect(uint8_t* server_address, uint32_t server_port, bu
 
 #else
 
-
 uint32_t protocol_boot(buffer_circ_t* buf, void* message, size_t message_size)
 {
 	struct labscim_protocol_boot* pb;
+	uint32_t ret;
 	pb = (struct labscim_protocol_boot*)malloc(FIXED_SIZEOF_STRUCT_LABSCIM_PROTOCOL_BOOT + message_size);
 	if(pb==NULL)
 	{
@@ -402,12 +415,13 @@ uint32_t protocol_boot(buffer_circ_t* buf, void* message, size_t message_size)
 	pb->hdr.labscim_protocol_magic_number = LABSCIM_PROTOCOL_MAGIC_NUMBER;
 	pb->hdr.labscim_protocol_code = LABSCIM_PROTOCOL_BOOT;
 	pb->hdr.message_size = FIXED_SIZEOF_STRUCT_LABSCIM_PROTOCOL_BOOT + message_size;
-	pb->hdr.sequence_number = labscim_protocol_get_new_sequence_number();
+	ret = labscim_protocol_get_new_sequence_number();
+	pb->hdr.sequence_number = ret;
 	pb->hdr.request_sequence_number = 0;
 	memcpy(pb->message, message, message_size);
 	labscim_socket_send(buf, (void *)pb, FIXED_SIZEOF_STRUCT_LABSCIM_PROTOCOL_BOOT + message_size);
 	free(pb);
-	return pb->hdr.sequence_number;
+	return ret;
 }
 
 uint32_t time_event(buffer_circ_t* buf, uint32_t sequence_number, uint32_t time_event_id, uint64_t current_time_us)
@@ -448,7 +462,6 @@ uint32_t radio_response(buffer_circ_t* buf, uint16_t radio_response, uint64_t cu
 	return sequence_number;
 }
 
-
 uint32_t signal_register_response(buffer_circ_t* buf, uint32_t sequence_number, uint64_t signal_id)
 {
 	struct labscim_signal_register_response rr;
@@ -462,7 +475,18 @@ uint32_t signal_register_response(buffer_circ_t* buf, uint32_t sequence_number, 
 	return rr.hdr.sequence_number;
 }
 
-
+uint32_t send_random(buffer_circ_t* buf, union random_number result, uint64_t sequence_number)
+{
+	struct labscim_signal_get_random_response grr;
+	grr.hdr.labscim_protocol_magic_number = LABSCIM_PROTOCOL_MAGIC_NUMBER;
+	grr.hdr.labscim_protocol_code = LABSCIM_GET_RANDOM_RESPONSE;
+	grr.hdr.message_size = sizeof(struct labscim_signal_get_random_response);
+	grr.hdr.sequence_number = labscim_protocol_get_new_sequence_number();
+	grr.hdr.request_sequence_number = sequence_number;
+	grr.result = result;
+	labscim_socket_send(buf, (void *)&grr, sizeof(struct labscim_signal_get_random_response));
+	return grr.hdr.sequence_number;
+}
 
 int32_t labscim_socket_connect(uint32_t server_port, buffer_circ_t* buf )
 {
