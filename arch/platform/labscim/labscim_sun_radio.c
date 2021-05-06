@@ -120,7 +120,7 @@ extern const prop_mode_tx_power_config_t TX_POWER_DRIVER[];
 #define OUTPUT_POWER_UNKNOWN 0xFFFF
 
 /* Default TX Power - position in output_power[] */
-static const prop_mode_tx_power_config_t *tx_power_current = &TX_POWER_DRIVER[1];
+static const prop_mode_tx_power_config_t *tx_power_current = &TX_POWER_DRIVER[0];
 /*---------------------------------------------------------------------------*/
 #ifdef PROP_MODE_CONF_LO_DIVIDER
 #define PROP_MODE_LO_DIVIDER   PROP_MODE_CONF_LO_DIVIDER
@@ -425,7 +425,7 @@ radio_read(void *buf, unsigned short bufsize)
 		packetbuf_set_attr(PACKETBUF_ATTR_LINK_QUALITY, payload->RSSI_dbm_x100);
 	}
 	simSignalStrength = payload->RSSI_dbm_x100;
-	simLQI = payload->RSSI_dbm_x100;
+	simLQI = payload->LQI;
 	simLastPacketTimestamp = payload->RX_timestamp_us-message_size*(RADIO_BYTE_AIR_TIME)+32;
 	free(msg);
 	return message_size;
@@ -676,7 +676,7 @@ get_value(radio_param_t param, radio_value_t *value)
 		}
 		return RADIO_RESULT_OK;
 	case RADIO_PARAM_LAST_RSSI:
-		*value = simSignalStrength;
+		*value = simSignalStrength/100;
 		return RADIO_RESULT_OK;
 	case RADIO_PARAM_LAST_LINK_QUALITY:
 		*value = simLQI;

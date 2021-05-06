@@ -93,19 +93,31 @@
 
 
 
-//#define TSCH_DEBUG_INIT() tsch_log("init\n")
-//#define TSCH_DEBUG_INTERRUPT() tsch_log("irq\n")
-//#define TSCH_DEBUG_RX_EVENT() tsch_log("rx\n")
-//#define TSCH_DEBUG_TX_EVENT() tsch_log("tx\n")
-//#define TSCH_DEBUG_SLOT_START() tsch_log("slot start\n")
-//#define TSCH_DEBUG_SLOT_END() tsch_log("slot end\n")
+//#define TSCH_DEBUG_INIT() tsch_log("init")
+//#define TSCH_DEBUG_INTERRUPT() tsch_log("irq")
+//#define TSCH_DEBUG_RX_EVENT() tsch_log("rx")
+//#define TSCH_DEBUG_TX_EVENT() tsch_log("tx")
+//#define TSCH_DEBUG_SLOT_START() tsch_log("slot start")
+//#define TSCH_DEBUG_SLOT_END() tsch_log("slot end")
 
 #define QUEUEBUF_CONF_NUM 32
 #define NBR_TABLE_CONF_MAX_NEIGHBORS 100
 #define NETSTACK_MAX_ROUTE_ENTRIES 100
 #define UIP_CONF_UDP_CONNS 100
 
-#define TSCH_CONF_ASSOCIATION_POLL_FREQUENCY 500
-//#ifndef TSCH_CONF_CHANNEL_SCAN_DURATION
+#define TSCH_CONF_ASSOCIATION_POLL_FREQUENCY 100
+
+//since our timeslot is 40ms (from default 10ms at 2.4GHz), orchestra default periods were divided by 4 (the nearest prime)
+#define ORCHESTRA_CONF_EBSF_PERIOD (89)
+#define ORCHESTRA_CONF_COMMON_SHARED_PERIOD (17)
+#define ORCHESTRA_CONF_UNICAST_PERIOD (11)
+
+#define TSCH_CONF_DEFAULT_HOPPING_SEQUENCE (uint8_t[]){ 16, 17, 23, 18, 26, 15, 25, 22, 19, 11, 12, 13, 24, 14, 20, 21 }
+#define TSCH_CONF_JOIN_HOPPING_SEQUENCE (uint8_t[]){ 16, 22 }
+
+
+#define TSCH_CONF_EB_PERIOD     (4 * CLOCK_SECOND)
+#define TSCH_CONF_MAX_EB_PERIOD (4 * CLOCK_SECOND)
+
 
 #endif /* PROJECT_CONF_H_ */

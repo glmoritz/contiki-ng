@@ -8,8 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "labscim_linked_list.h"
-
+#include "labscim_linked_list.h" 
 
 void labscim_ll_init_list(struct labscim_ll* linked_list)
 {

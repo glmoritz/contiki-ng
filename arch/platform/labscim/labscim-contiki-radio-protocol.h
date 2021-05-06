@@ -13,61 +13,20 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include "omnet_radio_mode.h"
 
 #define CONTIKI_RADIO_SETUP (0x1111)
-/**
- * This is setup command for the configuration of the omnet radio
- */
+
 struct contiki_radio_setup
 {
-	uint32_t Power_dbm;
-	uint32_t Bitrate_bps;
-	uint32_t Frequency_Hz;
-	uint32_t Bandwidth_Hz;
+       uint32_t Power_dbm;
+       uint32_t Bitrate_bps;
+       uint32_t Frequency_Hz;
+       uint32_t Bandwidth_Hz;
 } __attribute__((packed));
 
 
 #define CONTIKI_RADIO_SET_MODE (0x2222)
-typedef enum {
-	/**
-	 * The radio is turned off, frame reception or transmission is not
-	 * possible, power consumption is zero, radio mode switching is slow.
-	 */
-	RADIO_MODE_OFF,
-
-	/**
-	 * The radio is sleeping, frame reception or transmission is not possible,
-	 * power consumption is minimal, radio mode switching is fast.
-	 */
-	RADIO_MODE_SLEEP,
-
-	/**
-	 * The radio is prepared for frame reception, frame transmission is not
-	 * possible, power consumption is low when receiver is idle and medium
-	 * when receiving.
-	 */
-	RADIO_MODE_RECEIVER,
-
-	/**
-	 * The radio is prepared for frame transmission, frame reception is not
-	 * possible, power consumption is low when transmitter is idle and high
-	 * when transmitting.
-	 */
-	RADIO_MODE_TRANSMITTER,
-
-	/**
-	 * The radio is prepared for simultaneous frame reception and transmission,
-	 * power consumption is low when transceiver is idle, medium when receiving
-	 * and high when transmitting.
-	 */
-	RADIO_MODE_TRANSCEIVER,
-
-	/**
-	 * The radio is switching from one mode to another, frame reception or
-	 * transmission is not possible, power consumption is minimal.
-	 */
-	RADIO_MODE_SWITCHING    // this radio mode must be the very last
-} RadioMode;
 
 /**
  * This sets the radio in the different operation modes
@@ -75,9 +34,8 @@ typedef enum {
 
 struct contiki_radio_mode
 {
-	uint8_t RadioMode;
+    uint8_t RadioMode;
 } __attribute__((packed));
-
 
 #define CONTIKI_RADIO_SEND (0x3333)
 #define CONTIKI_RADIO_SEND_COMPLETED (0x3334)
