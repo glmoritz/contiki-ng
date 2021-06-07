@@ -179,21 +179,24 @@ void labscim_buffer_deinit(buffer_circ_t* buf, uint8_t del)
 		buf->data = NULL;
 	}
 #else
-	if(buf->mem!=NULL)
+	if(buf!=NULL)
 	{
-		labscim_unmap_shared_memory(buf->name, buf->mem, buf->mem->size,del);
-	}
-	if(buf->name!=NULL)
-	{
-		free(buf->name);
-	}
-	if(del)
-	{
-	    shared_mutex_destroy(buf->mutex);
-	}
-	else
-	{
-	    shared_mutex_close(buf->mutex);
+	    if(buf->mem!=NULL)
+	    {
+	        labscim_unmap_shared_memory(buf->name, buf->mem, buf->mem->size,del);
+	    }
+	    if(buf->name!=NULL)
+	    {
+	        free(buf->name);
+	    }
+	    if(del)
+	    {
+	        shared_mutex_destroy(buf->mutex);
+	    }
+	    else
+	    {
+	        shared_mutex_close(buf->mutex);
+	    }
 	}
 #endif
 }
