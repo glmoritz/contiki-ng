@@ -179,6 +179,11 @@ static PT_THREAD(tsch_tx_slot(struct pt *pt, struct rtimer *t));
 static PT_THREAD(tsch_rx_slot(struct pt *pt, struct rtimer *t));
 
 
+static void tsch_log(char* arg)
+{
+	printf("%8d %s\n",clock_time(),arg);
+}
+
 //char gMsg[256];
 //void tsch_log(char* data)
 //{
@@ -539,6 +544,7 @@ PT_THREAD(tsch_tx_slot(struct pt *pt, struct rtimer *t))
       seqno = ((uint8_t *)(packet))[2];
       /* if this is an EB, then update its Sync-IE */
       if(current_neighbor == n_eb) {
+    	//tsch_log("is eb");
         packet_ready = tsch_packet_update_eb(packet, packet_len, current_packet->tsch_sync_ie_offset);
       } else {
         packet_ready = 1;

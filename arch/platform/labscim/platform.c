@@ -148,6 +148,7 @@ extern void labscim_set_time(uint64_t time);
 extern void labscim_time_event(struct labscim_time_event* msg);
 
 uint32_t gBootReceived=0;
+uint8_t gIsCoordinator=0;
 uint32_t gProcessing=0;
 
 void labscim_protocol_boot(struct labscim_protocol_boot* msg)
@@ -156,6 +157,7 @@ void labscim_protocol_boot(struct labscim_protocol_boot* msg)
 	memcpy((void*)mac_addr,(void*)cns->mac_addr,sizeof(linkaddr_t));
 	labscim_set_time(cns->startup_time);
 	gBootReceived = 1;
+	gIsCoordinator = cns->tsch_coordinator;
 	free(msg);
 	return;
 }

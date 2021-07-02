@@ -928,6 +928,7 @@ PROCESS_THREAD(tsch_send_eb_process, ev, data)
           if(!(p = tsch_queue_add_packet(&tsch_eb_address, 1, NULL, NULL))) {
             LOG_ERR("! could not enqueue EB packet\n");
           } else {
+        	  //printf("%8d EB enqueue\n",clock_time());
               LOG_INFO("TSCH: enqueue EB packet %u %u\n",
                        packetbuf_totlen(), packetbuf_hdrlen());
             p->tsch_sync_ie_offset = tsch_sync_ie_offset;
@@ -935,6 +936,10 @@ PROCESS_THREAD(tsch_send_eb_process, ev, data)
           }
         }
       }
+//      else
+//      {
+//    	  printf("%8d EB already queued\n",clock_time());
+//      }
     }
     if(tsch_current_eb_period > 0) {
       /* Next EB transmission with a random delay
@@ -983,12 +988,12 @@ tsch_init(void)
 
   if(gAssociationSignal<0)
   {
-	  gAssociationSignal = LabscimSignalRegister("NodeAssociated");
+	  gAssociationSignal = LabscimSignalRegister("TSCHNodeAssociated");
   }
 
   if(gDisassociationSignal<0)
     {
-	  gDisassociationSignal = LabscimSignalRegister("NodeDisassociated");
+	  gDisassociationSignal = LabscimSignalRegister("TSCHNodeDisassociated");
     }
 
 

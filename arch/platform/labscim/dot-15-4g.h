@@ -69,7 +69,7 @@
 #ifdef DOT_15_4G_CONF_FREQUENCY_BAND_ID
 #define DOT_15_4G_FREQUENCY_BAND_ID DOT_15_4G_CONF_FREQUENCY_BAND_ID
 #else
-#define DOT_15_4G_FREQUENCY_BAND_ID DOT_15_4G_FREQUENCY_BAND_915
+#define DOT_15_4G_FREQUENCY_BAND_ID DOT_15_4G_FREQUENCY_BAND_920
 #endif
 /*---------------------------------------------------------------------------*/
 /*
