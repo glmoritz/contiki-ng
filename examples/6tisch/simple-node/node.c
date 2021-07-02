@@ -61,15 +61,18 @@
 static struct simple_udp_connection udp_conn;
 #define SEND_INTERVAL		  (15 * CLOCK_SECOND)
 
-
+clock_time_t gLastReceivedPacket=0;
 
 uint64_t gPacketGeneratedSignal;
 uint64_t gPacketLatencySignal;
 uint64_t gRTTSignal;
 uint64_t gPacketHopcountSignal;
+uint64_t gAoIMax;
+uint64_t gAoIMin;
 uint64_t gNodeJoinSignal;
 uint64_t gNodeLeaveSignal;
 
+extern uint8_t gIsCoordinator;
 
 
 
@@ -141,7 +144,7 @@ clock_time_t gBootTime;
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(node_process, ev, data)
 {
-	int is_coordinator;
+	//int is_coordinator;
 	static struct etimer periodic_timer;
 	static unsigned count;
 	static char str[32];
@@ -156,21 +159,25 @@ PROCESS_THREAD(node_process, ev, data)
 
 	PROCESS_BEGIN();
 
-	is_coordinator = 0;
+	//is_coordinator = 0;
 	gBootTime = clock_time();
 
-#if CONTIKI_TARGET_COOJA || CONTIKI_TARGET_Z1 || CONTIKI_TARGET_LABSCIM
-	is_coordinator = (node_id == 1);
-#endif
+//#if CONTIKI_TARGET_COOJA || CONTIKI_TARGET_Z1 || CONTIKI_TARGET_LABSCIM
+//	is_coordinator = (node_id == 1);
+//#endif
 
 
 
 
-	if(is_coordinator)
+	if(gIsCoordinator)
 	{
-		gPacketGeneratedSignal = LabscimSignalRegister("DownstreamPacketGenerated");
-		gPacketLatencySignal = LabscimSignalRegister("UpstreamPacketLatency");
-		gPacketHopcountSignal = LabscimSignalRegister("UpstreamPacketHopcount");
+		gPacketGeneratedSignal = LabscimSignalRegister("TSCHDownstreamPacketGenerated");
+		gPacketLatencySignal = LabscimSignalRegister("TSCHUpstreamPacketLatency");
+		gPacketHopcountSignal = LabscimSignalRegister("TSCHUpstreamPacketHopcount");
+		gAoIMax = LabscimSignalRegister("TSCHUpstreamAoIMax");
+		gAoIMin = LabscimSignalRegister("TSCHUpstreamAoIMin");
+
+
 
 		NETSTACK_MAC.on();
 
@@ -183,13 +190,14 @@ PROCESS_THREAD(node_process, ev, data)
 	}
 	else
 	{
-
-		gPacketGeneratedSignal = LabscimSignalRegister("UpstreamPacketGenerated");
-		gPacketLatencySignal = LabscimSignalRegister("DownstreamPacketLatency");
-		gPacketHopcountSignal = LabscimSignalRegister("DownstreamPacketHopcount");
-		gNodeJoinSignal = LabscimSignalRegister("NodeJoin");
-		gNodeLeaveSignal = LabscimSignalRegister("NodeLeave");
-		gRTTSignal = LabscimSignalRegister("PacketRTT");
+		gAoIMax = LabscimSignalRegister("TSCHDownstreamAoIMax");
+		gAoIMin = LabscimSignalRegister("TSCHDownstreamAoIMin");
+		gPacketGeneratedSignal = LabscimSignalRegister("TSCHUpstreamPacketGenerated");
+		gPacketLatencySignal = LabscimSignalRegister("TSCHDownstreamPacketLatency");
+		gPacketHopcountSignal = LabscimSignalRegister("TSCHDownstreamPacketHopcount");
+		gNodeJoinSignal = LabscimSignalRegister("TSCHNodeJoin");
+		gNodeLeaveSignal = LabscimSignalRegister("TSCHNodeLeave");
+		gRTTSignal = LabscimSignalRegister("TSCHPacketRTT");
 
 		NETSTACK_MAC.on();
 

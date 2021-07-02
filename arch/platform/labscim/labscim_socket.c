@@ -656,7 +656,7 @@ void labscim_cmd_log(void* data, char* ident)
 		//memcpy(msg, pm->message,pm->hdr.message_size - FIXED_SIZEOF_STRUCT_LABSCIM_PRINT_MESSAGE);
 		//msg[pm->hdr.message_size - FIXED_SIZEOF_STRUCT_LABSCIM_PRINT_MESSAGE]=0;
 		fprintf(string,"seq%7d\tPRINT_MESSAGE\tsize:%4d\t",cmd->sequence_number,cmd->message_size);
-		fwrite(pm->message,sizeof(char),pm->hdr.message_size - FIXED_SIZEOF_STRUCT_LABSCIM_PRINT_MESSAGE,string);
+		fwrite(pm->message,sizeof(char),pm->hdr.message_size - FIXED_SIZEOF_STRUCT_LABSCIM_PRINT_MESSAGE - 1,string);
 		break;
 	}
 	case LABSCIM_RADIO_COMMAND:

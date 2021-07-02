@@ -942,6 +942,7 @@ PROCESS_THREAD(tsch_send_eb_process, ev, data)
       LOG_DBG("skip sending EB: in the leaf mode\n");
     } else if(tsch_queue_nbr_packet_count(n_eb) != 0) {
       /* Enqueue EB only if there isn't already one in queue */
+<<<<<<< HEAD
       LOG_DBG("skip sending EB: already queued\n");
     } else {
       uint8_t hdr_len = 0;
@@ -957,8 +958,30 @@ PROCESS_THREAD(tsch_send_eb_process, ev, data)
                    packetbuf_totlen(), packetbuf_hdrlen());
           p->tsch_sync_ie_offset = tsch_sync_ie_offset;
           p->header_len = hdr_len;
+=======
+      if(tsch_queue_nbr_packet_count(n_eb) == 0) {
+        uint8_t hdr_len = 0;
+        uint8_t tsch_sync_ie_offset;
+        /* Prepare the EB packet and schedule it to be sent */
+        if(tsch_packet_create_eb(&hdr_len, &tsch_sync_ie_offset) > 0) {
+          struct tsch_packet *p;
+          /* Enqueue EB packet, for a single transmission only */
+          if(!(p = tsch_queue_add_packet(&tsch_eb_address, 1, NULL, NULL))) {
+            LOG_ERR("! could not enqueue EB packet\n");
+          } else {
+        	  //printf("%8d EB enqueue\n",clock_time());
+              LOG_INFO("TSCH: enqueue EB packet %u %u\n",
+                       packetbuf_totlen(), packetbuf_hdrlen());
+            p->tsch_sync_ie_offset = tsch_sync_ie_offset;
+            p->header_len = hdr_len;
+          }
+>>>>>>> improved coordinator setup on tsch nodes
         }
       }
+//      else
+//      {
+//    	  printf("%8d EB already queued\n",clock_time());
+//      }
     }
     if(tsch_current_eb_period > 0) {
       /* Next EB transmission with a random delay
@@ -1007,12 +1030,12 @@ tsch_init(void)
 
   if(gAssociationSignal<0)
   {
-	  gAssociationSignal = LabscimSignalRegister("NodeAssociated");
+	  gAssociationSignal = LabscimSignalRegister("TSCHNodeAssociated");
   }
 
   if(gDisassociationSignal<0)
     {
-	  gDisassociationSignal = LabscimSignalRegister("NodeDisassociated");
+	  gDisassociationSignal = LabscimSignalRegister("TSCHNodeDisassociated");
     }
 
 
