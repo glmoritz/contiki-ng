@@ -167,6 +167,7 @@ void labscim_buffer_init(buffer_circ_t* buf, char* buffer_name, size_t MemorySiz
 		buf->mem->size = MemorySize;
 		buf->mem->wr_offset=0;
 		buf->mem->rd_offset=0;
+		buf->mem->level = 0;
 	}
 }
 
@@ -606,13 +607,6 @@ void labscim_cmd_log(void* data, char* ident)
 
 	fprintf(string,"%ld %s ",(start.tv_sec * 1000000 + start.tv_usec)%1000000000, ident);
 
-	if(cmd->sequence_number == 134169)
-	{
-		cmd->sequence_number++;
-		cmd->sequence_number--;
-	}
-
-
 	switch(cmd->labscim_protocol_code)
 	{
 	case LABSCIM_PROTOCOL_BOOT:
@@ -678,7 +672,9 @@ static void labscim_socket_send(buffer_circ_t* buf, void* data, size_t size)
 {
 	size_t written=0;
 #ifdef LABSCIM_LOG_COMMANDS
-	labscim_cmd_log(data, "out ");
+	char str[64];
+	sprintf(str,"send (+%d, lvl %d)",size,labscim_buffer_available(buf));
+	labscim_cmd_log(data, str);
 #endif
 #ifdef LABSCIM_REMOTE_SOCKET
 	//send
@@ -720,11 +716,16 @@ size_t labscim_buffer_direct_input(buffer_circ_t* buf, void* data, size_t size)
 	}
 	else
 	{
-		max_writesize = buf->mem->rd_offset - buf->mem->wr_offset - 1;
+		max_writesize = buf->mem->rd_offset - buf->mem->wr_offset;		
+	}
+	if(buf->mem->level==buf->mem->size)
+	{
+		max_writesize = 0;
 	}
 	write_size = LABSCIM_MIN(max_writesize,size);
 	memcpy(buf->mem->data + buf->mem->wr_offset, data,write_size);
 	buf->mem->wr_offset += write_size;
+	buf->mem->level += write_size;
 	if(buf->mem->wr_offset == buf->mem->size) //warp
 	{
 		buf->mem->wr_offset = 0;
@@ -774,6 +775,7 @@ static void labscim_buffer_purge(buffer_circ_t* buf)
 	//this function should never be called in TCP environment
 	const uint32_t labscim_magic_number = LABSCIM_PROTOCOL_MAGIC_NUMBER;
 	const uint8_t labscim_magic_byte = *((uint8_t*)&labscim_magic_number);
+	printf("ERROR: === BUFFER PURGE ===\n\n");
 	if(buf->mem->rd_offset < buf->mem->wr_offset)
 	{
 		while(buf->mem->rd_offset < buf->mem->wr_offset)
@@ -791,6 +793,7 @@ static void labscim_buffer_purge(buffer_circ_t* buf)
 				else
 				{
 					buf->mem->rd_offset++;
+					buf->mem->level--;
 				}
 			}
 		}
@@ -803,6 +806,7 @@ static void labscim_buffer_purge(buffer_circ_t* buf)
 			if(*(buf->mem->data + buf->mem->rd_offset) != labscim_magic_byte)
 			{
 				buf->mem->rd_offset++;
+				buf->mem->level--;
 			}
 			else
 			{
@@ -814,6 +818,7 @@ static void labscim_buffer_purge(buffer_circ_t* buf)
 				else
 				{
 					buf->mem->rd_offset++;
+					buf->mem->level--;
 				}
 			}
 		}
@@ -895,28 +900,31 @@ static size_t labscim_buffer_peek(buffer_circ_t* buf, void *data, size_t size)
 	return size;
 }
 
-static int32_t labscim_buffer_retrieve(buffer_circ_t* buf,void *data, uint32_t size)
+int32_t labscim_buffer_retrieve(buffer_circ_t* buf,void *data, uint32_t size)
 {
 	size_t rd = labscim_buffer_peek(buf, data,size);
+	buf->mem->level -= rd;
 	buf->mem->rd_offset= (buf->mem->rd_offset + rd) % buf->mem->size;
 	return rd;
 }
 
-static inline size_t labscim_buffer_available(buffer_circ_t* buf)
+size_t labscim_buffer_available(buffer_circ_t* buf)
 {
-	if(buf->mem->wr_offset >= buf->mem->rd_offset)
-	{
-		return (buf->mem->size-buf->mem->wr_offset+buf->mem->rd_offset);
-	}
-	else
-	{
-		return buf->mem->rd_offset - buf->mem->wr_offset;
-	}
+	return buf->mem->size - buf->mem->level;
+	// if(buf->mem->wr_offset >= buf->mem->rd_offset)
+	// {
+	// 	return (buf->mem->size-buf->mem->wr_offset+buf->mem->rd_offset);
+	// }
+	// else
+	// {
+	// 	return buf->mem->rd_offset - buf->mem->wr_offset;
+	// }
 }
 
-static inline size_t labscim_buffer_used(buffer_circ_t* buf)
+size_t labscim_buffer_used(buffer_circ_t* buf)
 {
-    return buf->mem->size - labscim_buffer_available(buf);
+	return buf->mem->level;
+    //return buf->mem->size - labscim_buffer_available(buf);
 }
 
 

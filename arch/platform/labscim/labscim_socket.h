@@ -22,10 +22,11 @@
 typedef struct {
 	uint64_t  wr_offset;
 	uint64_t  rd_offset;
+  uint64_t  level;
 	size_t  size;
 	uint8_t data[];
 } buffer_circ_memory;
-#define FIXED_SIZEOF_BUFFER_CIRC_MEMORY (2*sizeof(uint8_t*)+sizeof(size_t))
+#define FIXED_SIZEOF_BUFFER_CIRC_MEMORY (3*sizeof(uint64_t)+sizeof(size_t))
 
 typedef struct {
   buffer_circ_memory* mem;
