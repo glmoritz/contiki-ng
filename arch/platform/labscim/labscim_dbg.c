@@ -17,7 +17,7 @@ extern buffer_circ_t* gNodeOutputBuffer;
 void message_is_completed()
 {
 	gByteBuffer[gCursor]=0;
-	print_message(gNodeOutputBuffer, LOGLEVEL_INFO, gByteBuffer,gCursor+1);
+	print_message(gNodeOutputBuffer, LOGLEVEL_WARN, gByteBuffer,gCursor+1);
 	gCursor = 0;
 }
 
