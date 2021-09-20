@@ -69,11 +69,15 @@ uint64_t gRTTSignal;
 uint64_t gPacketHopcountSignal;
 uint64_t gAoIMax;
 uint64_t gAoIMin;
+uint64_t gAoIArea;
 uint64_t gNodeJoinSignal;
 uint64_t gNodeLeaveSignal;
 
 extern uint8_t gIsCoordinator;
 
+#define MAX_NODES (256)
+uint64_t gLastRcvMsgGenerationTime[MAX_NODES];
+uint64_t gLastRcvMsgReceptionTime[MAX_NODES];
 
 
 /*---------------------------------------------------------------------------*/
@@ -87,6 +91,30 @@ struct labscim_test
 	clock_time_t downstream_generation_time;
 	uint8_t request_number;
 } __attribute__((packed));
+
+void aoi(const uip_ipaddr_t *sender_addr, const uint8_t *data)
+{
+	struct labscim_test* lt = (struct labscim_test*)data;
+	if( gLastRcvMsgReceptionTime[ sender_addr->u8[15] ] > 0)
+	{
+		float LastAoiMin = ((float)(gLastRcvMsgReceptionTime[sender_addr->u8[15]] - gLastRcvMsgGenerationTime[sender_addr->u8[15]]))/1e6;
+		float AoIMin = (clock_time()-lt->upstream_generation_time)/1e6;
+		float AoIMax = (clock_time()-gLastRcvMsgGenerationTime[ sender_addr->u8[15] ])/1e6;
+		
+ 
+
+		float AoIBase = ( (float)(clock_time()-gLastRcvMsgGenerationTime[ sender_addr->u8[15] ]) )/1e6;
+		float AoIArea = AoIBase * ((AoIMax + LastAoiMin)/2);
+		float offset = gIsCoordinator?(float)(sender_addr->u8[15]<<24):0;
+
+		LabscimSignalEmit(gAoIMax, AoIMax + offset );
+		LabscimSignalEmit(gAoIMin,AoIMin + offset );
+		LabscimSignalEmit(gAoIArea,AoIArea + offset );
+	}
+
+	gLastRcvMsgGenerationTime[ sender_addr->u8[15] ] = lt->upstream_generation_time;
+	gLastRcvMsgReceptionTime[ sender_addr->u8[15] ] = clock_time();
+}
 
 
 static void
@@ -107,7 +135,9 @@ udp_server_rx_callback(struct simple_udp_connection *c,
 	LabscimSignalEmit(gPacketLatencySignal,(clock_time()-lt->upstream_generation_time)/1e6);
 	LabscimSignalEmit(gPacketHopcountSignal,64-UIP_IP_BUF->ttl+1);
 
-#if WITH_SERVER_REPLY
+	aoi(sender_addr,data);
+
+#if 0 //WITH_SERVER_REPLY
 	/* send back the same string to the client as an echo reply */
 	LOG_INFO("Sending response.\n");
 	lt->downstream_generation_time = clock_time();
@@ -129,6 +159,9 @@ udp_client_rx_callback(struct simple_udp_connection *c,
 	LabscimSignalEmit(gPacketLatencySignal,(clock_time()-lt->downstream_generation_time)/1e6);
 	LabscimSignalEmit(gRTTSignal,(clock_time()-lt->upstream_generation_time)/1e6);
 	LabscimSignalEmit(gPacketHopcountSignal,64-UIP_IP_BUF->ttl+1);
+
+	aoi(sender_addr, data);
+
 	LOG_INFO("Received response '%.*s' from ", datalen, (char *) data);
 	LOG_INFO_6ADDR(sender_addr);
 #if LLSEC802154_CONF_ENABLED
@@ -151,9 +184,8 @@ PROCESS_THREAD(node_process, ev, data)
 	static struct  labscim_test lt;
 	static uint32_t NodeJoined = 0;
 	static uip_ipaddr_t dest_ipaddr;
-
-
-
+	double next_message_wait_s = 0;
+	double avgSendTime_s = 15;
 
 	lt.request_number = 0;
 
@@ -168,6 +200,13 @@ PROCESS_THREAD(node_process, ev, data)
 
 
 
+	for(uint32_t i=0;i<MAX_NODES;i++)
+	{
+		gLastRcvMsgGenerationTime[ i ] = 0;
+		gLastRcvMsgReceptionTime[ i ] = 0;
+	}
+
+
 
 	if(gIsCoordinator)
 	{
@@ -176,11 +215,9 @@ PROCESS_THREAD(node_process, ev, data)
 		gPacketHopcountSignal = LabscimSignalRegister("TSCHUpstreamPacketHopcount");
 		gAoIMax = LabscimSignalRegister("TSCHUpstreamAoIMax");
 		gAoIMin = LabscimSignalRegister("TSCHUpstreamAoIMin");
-
-
+		gAoIArea = LabscimSignalRegister("TSCHUpstreamAoIArea");
 
 		NETSTACK_MAC.on();
-
 		NETSTACK_ROUTING.root_start();
 
 		/* Initialize UDP connection */
@@ -192,6 +229,7 @@ PROCESS_THREAD(node_process, ev, data)
 	{
 		gAoIMax = LabscimSignalRegister("TSCHDownstreamAoIMax");
 		gAoIMin = LabscimSignalRegister("TSCHDownstreamAoIMin");
+		gAoIArea = LabscimSignalRegister("TSCHDownstreamAoIArea");
 		gPacketGeneratedSignal = LabscimSignalRegister("TSCHUpstreamPacketGenerated");
 		gPacketLatencySignal = LabscimSignalRegister("TSCHDownstreamPacketLatency");
 		gPacketHopcountSignal = LabscimSignalRegister("TSCHDownstreamPacketHopcount");
@@ -205,8 +243,10 @@ PROCESS_THREAD(node_process, ev, data)
 		simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
 				UDP_SERVER_PORT, udp_client_rx_callback);
 
-		etimer_set(&periodic_timer, random_rand()%(SEND_INTERVAL/4) + SEND_INTERVAL);
 
+		next_message_wait_s = 4.0+LabscimExponentialRandomVariable(avgSendTime_s-4.0);
+		LOG_INFO("Next message in %d milliseconds\n", next_message_wait_s * 1000);
+		etimer_set(&periodic_timer, next_message_wait_s * CLOCK_SECOND);
 		while(1) {
 			PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
 
@@ -239,8 +279,9 @@ PROCESS_THREAD(node_process, ev, data)
 			}
 
 			/* Add some jitter */
-			etimer_set(&periodic_timer, SEND_INTERVAL
-					- CLOCK_SECOND + (random_rand() % (2 * CLOCK_SECOND)));
+			next_message_wait_s = 4+LabscimExponentialRandomVariable(avgSendTime_s-4.0);
+			LOG_INFO("Next message in %d milliseconds\n",next_message_wait_s*1000);
+			etimer_set(&periodic_timer, next_message_wait_s * CLOCK_SECOND);
 		}
 
 

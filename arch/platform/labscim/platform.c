@@ -684,6 +684,10 @@ platform_main_loop()
 						}
 						iter = iter->next;
 					}
+					if(iter==NULL)
+					{
+						iter = ScheduledEtimers.tail;
+					}
 
 					//if not scheduled then schedule
 					if(!found)
@@ -697,7 +701,7 @@ platform_main_loop()
 
 
 						*new_timer = c;
-						labscim_ll_insert_before(&ScheduledEtimers,iter,new_timer);
+						labscim_ll_insert_after(&ScheduledEtimers,iter,new_timer);
 						set_time_event(gNodeOutputBuffer, CONTIKI_ETIMER_TIME_EVENT, ctrue, c - clock_time());
 					}
 

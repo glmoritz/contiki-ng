@@ -14,5 +14,7 @@ uint64_t LabscimSignalRegister(uint8_t* signal_name);
 
 void LabscimSignalEmit(uint64_t id, double value);
 
+double LabscimExponentialRandomVariable(double mean);
+
 
 #endif /* EXAMPLES_6TISCH_SIMPLE_NODE_LABSCIM_HELPER_H_ */
