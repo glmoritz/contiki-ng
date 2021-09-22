@@ -406,6 +406,28 @@ int32_t labscim_socket_connect(uint8_t* server_address, uint32_t server_port, bu
 
 #else
 
+uint32_t end_simulation(buffer_circ_t* buf)
+{
+    struct labscim_end* le;
+    uint32_t ret;
+    le = (struct labscim_end*)malloc(sizeof(struct labscim_end));
+    if(le==NULL)
+    {
+        perror("\nMalloc error \n");
+        return 0;
+    }
+    le->hdr.labscim_protocol_magic_number = LABSCIM_PROTOCOL_MAGIC_NUMBER;
+    le->hdr.labscim_protocol_code = LABSCIM_END;
+    pb->hdr.message_size = sizeof(struct labscim_end);
+    ret = labscim_protocol_get_new_sequence_number();
+    le->hdr.sequence_number = ret;
+    le->hdr.request_sequence_number = 0;
+    labscim_socket_send(buf, (void *)le, sizeof(struct labscim_end));
+    free(le);
+    return ret;
+}
+
+
 uint32_t protocol_boot(buffer_circ_t* buf, void* message, size_t message_size)
 {
 	struct labscim_protocol_boot* pb;
