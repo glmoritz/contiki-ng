@@ -226,4 +226,13 @@ Discrete distributions
 19 - poisson(lambda)	Poisson distribution with parameter lambda
 */
 
+/**
+ * This message is sent by omnet (only when using shared memory) to indicate that its time to terminate node process
+ */
+#define LABSCIM_END (0xA9A9)
+struct labscim_end
+{
+    struct labscim_protocol_header hdr;
+} __attribute__((packed));
+
 #endif /* LABSCIM_PROTOCOL_H_ */

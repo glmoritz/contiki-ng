@@ -59,6 +59,7 @@ typedef struct {
     uint32_t signal_register_response(buffer_circ_t* buf, uint32_t sequence_number, uint64_t signal_id);
     int32_t labscim_socket_connect(uint32_t server_port, buffer_circ_t* buf );
     uint32_t send_random(buffer_circ_t* buf, union random_number result, uint64_t sequence_number);
+    uint32_t end_simulation(buffer_circ_t* buf);
 #endif
 
 void labscim_set_send_command_callback(void (*Callback)(void) );
