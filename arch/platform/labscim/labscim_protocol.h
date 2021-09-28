@@ -164,6 +164,20 @@ struct labscim_node_is_ready
     struct labscim_protocol_header hdr;
 } __attribute__((packed));
 
+/**
+ * This message is a signal received by this node because it was subcribed
+ */
+#define LABSCIM_SIGNAL (0xA7A9)
+struct labscim_signal
+{
+    struct labscim_protocol_header hdr;
+    uint64_t signal_id; /**< This number is a radio specific command (check the radio protocol for this specific model)*/
+    uint64_t current_time; /**< This number is a radio specific command (check the radio protocol for this specific model)*/
+    uint64_t signal_size;
+    uint8_t signal[]; /**< This is a MAC specific signal*/
+} __attribute__((packed));
+#define FIXED_SIZEOF_STRUCT_LABSCIM_SIGNAL (sizeof(struct labscim_protocol_header)+3*sizeof(uint64_t))
+
 
 /**
  * This message is registers an omnet signal that can be used for result gathering
@@ -177,14 +191,39 @@ struct labscim_signal_register
 #define FIXED_SIZEOF_STRUCT_LABSCIM_SIGNAL_REGISTER (sizeof(struct labscim_protocol_header))
 
 /**
- * This message emits a omnet signal
+ * This message emits a omnet signal, as double
  */
-#define LABSCIM_SIGNAL_EMIT (0xA7A7)
-struct labscim_signal_emit
+#define LABSCIM_SIGNAL_EMIT_DOUBLE (0xA7A7)
+struct labscim_signal_emit_double
 {
     struct labscim_protocol_header hdr;
     uint64_t signal_id; /**< This is the id of the registered signal*/
     double value; /**< This is the value to be emitted*/
+} __attribute__((packed));
+
+
+/**
+ * This message emits a omnet, as char[]
+ */
+#define LABSCIM_SIGNAL_EMIT_CHAR (0xA8A7)
+struct labscim_signal_emit_char
+{
+    struct labscim_protocol_header hdr;
+    uint64_t signal_id; /**< This is the id of the registered signal*/
+    uint64_t string_size;
+    char string[]; /**< This is the string to be emitted (usually module specific struct, cast to char[])*/
+} __attribute__((packed));
+#define FIXED_SIZEOF_STRUCT_LABSCIM_EMIT_CHAR (sizeof(struct labscim_protocol_header)+2*sizeof(uint64_t))
+
+
+/**
+ * This message subscribes the module to receive signals
+ */
+#define LABSCIM_SIGNAL_SUBSCRIBE (0xA7A8)
+struct labscim_signal_subscribe
+{
+    struct labscim_protocol_header hdr;
+    uint64_t signal_id; /**< This is the id of signal where the node will be subscribed*/
 } __attribute__((packed));
 
 
