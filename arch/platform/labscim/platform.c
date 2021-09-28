@@ -285,6 +285,13 @@ void socket_process_command(struct labscim_protocol_header* hdr)
 		labscim_radio_incoming_command((struct labscim_radio_response*)(hdr));
 		break;
 	}
+	case LABSCIM_SIGNAL:
+	{
+		labscim_set_time(((struct labscim_signal*)(hdr))->current_time);
+		signal_arrived((struct labsim_signal*)(hdr));
+		break;
+	}
+
 	case LABSCIM_END:
 	{
 #ifdef LABSCIM_LOG_COMMANDS

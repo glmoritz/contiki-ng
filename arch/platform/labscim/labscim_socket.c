@@ -256,6 +256,20 @@ uint32_t cancel_time_event(buffer_circ_t* buf, uint32_t cancel_sequence_number)
 	return cte.hdr.sequence_number;
 }
 
+uint32_t signal_subscribe(buffer_circ_t* buf, uint64_t signal_id)
+{
+	struct labscim_signal_subscribe ss;
+	ss.hdr.labscim_protocol_magic_number = LABSCIM_PROTOCOL_MAGIC_NUMBER;
+	ss.hdr.labscim_protocol_code = LABSCIM_SIGNAL_SUBSCRIBE;
+	ss.hdr.message_size = sizeof(struct labscim_signal_subscribe);
+	ss.hdr.sequence_number = labscim_protocol_get_new_sequence_number();
+	ss.hdr.request_sequence_number = 0;
+	ss.signal_id = signal_id;
+	labscim_socket_send(buf, (void *)&ss, sizeof(struct labscim_signal_subscribe));
+	return ss.hdr.sequence_number;
+}
+
+
 uint32_t print_message(buffer_circ_t* buf, uint16_t message_type, uint8_t* message, uint32_t msglen)
 {
 	uint32_t ret;
@@ -312,18 +326,42 @@ uint32_t signal_register(buffer_circ_t* buf, uint8_t* signal_name)
 	return ret;
 }
 
-uint32_t signal_emit(buffer_circ_t* buf, uint64_t signal_id, double value)
+uint32_t signal_emit_double(buffer_circ_t* buf, uint64_t signal_id, double value)
 {
-	struct labscim_signal_emit se;
+	struct labscim_signal_emit_double se;
 	se.hdr.labscim_protocol_magic_number = LABSCIM_PROTOCOL_MAGIC_NUMBER;
-	se.hdr.labscim_protocol_code = LABSCIM_SIGNAL_EMIT;
-	se.hdr.message_size = sizeof(struct labscim_signal_emit);
+	se.hdr.labscim_protocol_code = LABSCIM_SIGNAL_EMIT_DOUBLE;
+	se.hdr.message_size = sizeof(struct labscim_signal_emit_double);
 	se.hdr.sequence_number = labscim_protocol_get_new_sequence_number();
 	se.hdr.request_sequence_number = 0;
 	se.signal_id = signal_id;
 	se.value = value;
-	labscim_socket_send(buf, (void *)&se, sizeof(struct labscim_signal_emit));
+	labscim_socket_send(buf, (void *)&se, sizeof(struct labscim_signal_emit_double));
 	return se.hdr.sequence_number;
+}
+
+uint32_t signal_emit_char(buffer_circ_t* buf, uint64_t signal_id, uint8_t* value, uint64_t size)
+{
+    uint32_t ret;
+    struct labscim_signal_emit_char* se;
+    ret = labscim_protocol_get_new_sequence_number();
+    se = (struct labscim_signal_emit_char*)malloc(FIXED_SIZEOF_STRUCT_LABSCIM_EMIT_CHAR + size);
+    if(se==NULL)
+    {
+        perror("\nMalloc error \n");
+        return 0;
+    }
+    se->hdr.labscim_protocol_magic_number = LABSCIM_PROTOCOL_MAGIC_NUMBER;
+    se->hdr.labscim_protocol_code = LABSCIM_SIGNAL_EMIT_CHAR;
+    se->hdr.message_size = FIXED_SIZEOF_STRUCT_LABSCIM_EMIT_CHAR + size;
+    se->hdr.sequence_number = ret;
+    se->hdr.request_sequence_number = 0;
+    se->string_size = size;
+	se->signal_id = signal_id;
+    memcpy(se->string, value, size);
+    labscim_socket_send(buf, (void *)se, FIXED_SIZEOF_STRUCT_LABSCIM_EMIT_CHAR + size);
+    free(se);
+    return ret;
 }
 
 uint32_t radio_command(buffer_circ_t* buf, uint16_t radio_command, uint8_t* radio_struct, uint32_t radio_struct_len)
@@ -418,7 +456,7 @@ uint32_t end_simulation(buffer_circ_t* buf)
     }
     le->hdr.labscim_protocol_magic_number = LABSCIM_PROTOCOL_MAGIC_NUMBER;
     le->hdr.labscim_protocol_code = LABSCIM_END;
-    pb->hdr.message_size = sizeof(struct labscim_end);
+    le->hdr.message_size = sizeof(struct labscim_end);
     ret = labscim_protocol_get_new_sequence_number();
     le->hdr.sequence_number = ret;
     le->hdr.request_sequence_number = 0;
@@ -463,6 +501,32 @@ uint32_t time_event(buffer_circ_t* buf, uint32_t sequence_number, uint32_t time_
 	labscim_socket_send(buf, (void *)&te, sizeof(struct labscim_time_event));
 	return te.hdr.sequence_number;
 }
+
+uint32_t send_signal(buffer_circ_t* buf,uint64_t signal, uint64_t current_time, void* signal_struct, size_t signal_struct_len)
+{
+    struct labscim_signal* sig;
+
+    sig = (struct labscim_signal*)malloc(FIXED_SIZEOF_STRUCT_LABSCIM_SIGNAL + signal_struct_len);
+    if(sig==NULL)
+    {
+        perror("\nMalloc error \n");
+        return 0;
+    }
+    sig->hdr.labscim_protocol_magic_number = LABSCIM_PROTOCOL_MAGIC_NUMBER;
+    sig->hdr.labscim_protocol_code = LABSCIM_SIGNAL;
+    sig->hdr.message_size = FIXED_SIZEOF_STRUCT_LABSCIM_SIGNAL + signal_struct_len;
+    uint32_t seq = labscim_protocol_get_new_sequence_number();
+    sig->hdr.sequence_number = seq;
+    sig->hdr.request_sequence_number = 0;
+    sig->signal_id = signal;
+    sig->signal_size = signal_struct_len;
+    sig->current_time = current_time;
+    memcpy(sig->signal, signal_struct, signal_struct_len);
+    labscim_socket_send(buf, (void *)sig, FIXED_SIZEOF_STRUCT_LABSCIM_SIGNAL + signal_struct_len);
+    free(sig);
+    return seq;
+}
+
 
 
 uint32_t radio_response(buffer_circ_t* buf, uint16_t radio_response, uint64_t current_time, void* radio_struct, size_t radio_struct_len, uint32_t sequence_number)
