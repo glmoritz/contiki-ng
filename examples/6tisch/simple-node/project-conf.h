@@ -100,6 +100,14 @@
 //#define TSCH_DEBUG_SLOT_START() tsch_log("slot start")
 //#define TSCH_DEBUG_SLOT_END() tsch_log("slot end")
 
+#define RPL_CONF_WITH_DAO_ACK (1)
+#define RPL_CONF_DAO_RETRANSMISSION_TIMEOUT (60*CLOCK_SECOND)
+#define RPL_CONF_DIO_INTERVAL_MIN (12) //2^12 msg = 4096
+#define RPL_CONF_DELAY_BEFORE_LEAVING      (10 * 60 * CLOCK_SECOND)
+
+
+
+
 #define TSCH_CONF_MAX_INCOMING_PACKETS (8)
 #define QUEUEBUF_CONF_NUM 32
 #define NBR_TABLE_CONF_MAX_NEIGHBORS 100
@@ -122,5 +130,6 @@
 #define TSCH_CONF_EB_PERIOD     (4 * CLOCK_SECOND)
 #define TSCH_CONF_MAX_EB_PERIOD (4 * CLOCK_SECOND)
 
+#define LOG_CONF_OUTPUT(...) labscim_printf(__VA_ARGS__)
 
 #endif /* PROJECT_CONF_H_ */

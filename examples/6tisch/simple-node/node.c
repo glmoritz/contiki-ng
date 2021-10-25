@@ -49,6 +49,7 @@
 #include "net/routing/routing.h"
 #include "net/ipv6/simple-udp.h"
 #include "labscim_protocol.h"
+#include <stdarg.h>
 
 
 #include "labscim_helper.h"
@@ -89,6 +90,54 @@ uint64_t gLastRcvMsgReceptionTime[MAX_NODES];
 /*---------------------------------------------------------------------------*/
 PROCESS(node_process, "RPL Node");
 AUTOSTART_PROCESSES(&node_process);
+
+char gBuffer[768];
+uint64_t gPtr = 0;
+
+int labscim_printf(const char *fmt, ...)
+{
+	#define LOGLEVEL_WARN (4)    
+	char Buf[770];
+	uint64_t i;
+	uint64_t start=0;
+	uint64_t len;
+    va_list args;
+    va_start(args, fmt);
+	int rc;
+    rc = vsnprintf(gBuffer+gPtr, sizeof(gBuffer)-gPtr, fmt, args);	
+	gPtr += rc;
+	if(gPtr>sizeof(gBuffer))
+	{		
+		gPtr = sizeof(gBuffer);		
+	}
+	gBuffer[sizeof(gBuffer)-1]=0;
+
+	len = gPtr;
+	for(i=0;i<len;i++)
+	{
+		if (gBuffer[i] == 10)
+		{
+			memcpy(Buf,gBuffer+start,i-start+1);
+			Buf[i-start+1]=0;
+			//printf("%s", Buf);
+			print_message(gNodeOutputBuffer, LOGLEVEL_WARN, Buf, i-start+2);
+			start=i+1;			
+		}
+	}
+	if(start<gPtr)
+	{
+		memcpy(gBuffer,gBuffer+start,gPtr-start);
+		gPtr -= start;
+	}
+	else
+	{
+		gPtr = 0;
+	}
+	va_end(args);
+    return rc;
+}
+
+
 
 
 struct labscim_test
