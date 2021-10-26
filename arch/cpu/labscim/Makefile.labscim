@@ -43,7 +43,7 @@ endif
 #    CFLAGS += -O2
 #  endif
 #endif
-CFLAGS += -O3
+CFLAGS += -O0
 
 ifeq ($(HOST_OS),Darwin)
 AROPTS = -rc

@@ -67,6 +67,7 @@
 #endif
 
 extern uint16_t node_id;
+void LabscimSignalEmitDouble(uint64_t id, double value);
 
 /* Log configuration */
 #include "sys/log.h"
@@ -112,7 +113,6 @@ const linkaddr_t tsch_eb_address = { { 0, 0 } };
 #endif /* LINKADDR_SIZE == 8 */
 
 int64_t gAssociationSignal=-1;
-int64_t gDisassociationSignal=-1;
 
 /* Is TSCH started? */
 int tsch_is_started = 0;
@@ -576,7 +576,7 @@ tsch_disassociate(void)
 {
 
   if(tsch_is_associated == 1) {
-	  LabscimSignalEmit(gDisassociationSignal,(double)node_id);
+	  LabscimSignalEmitDouble(gAssociationSignal,0.0);
 	  tsch_is_associated = 0;
     tsch_adaptive_timesync_reset();
     process_poll(&tsch_process);
@@ -738,7 +738,7 @@ tsch_associate(const struct input_packet *input_eb, rtimer_clock_t timestamp)
 #endif
 
       tsch_association_count++;
-      LabscimSignalEmit(gAssociationSignal,(double)node_id);
+      LabscimSignalEmitDouble(gAssociationSignal,1.0);
       LOG_INFO("association done (%u), sec %u, PAN ID %x, asn-%x.%lx, jp %u, timeslot id %u, hopping id %u, slotframe len %u with %u links, from ",
              tsch_association_count,
              tsch_is_pan_secured,
@@ -991,10 +991,7 @@ tsch_init(void)
 	  gAssociationSignal = LabscimSignalRegister("TSCHNodeAssociated");
   }
 
-  if(gDisassociationSignal<0)
-    {
-	  gDisassociationSignal = LabscimSignalRegister("TSCHNodeDisassociated");
-    }
+
 
 
   /* Check that the platform provides a TSCH timeslot timing template */
