@@ -150,15 +150,16 @@ extern void labscim_time_event(struct labscim_time_event* msg);
 uint32_t gBootReceived=0;
 uint8_t gIsCoordinator=0;
 uint32_t gProcessing=0;
+struct contiki_node_setup* gContikiNodeSetup = NULL;
 
 void labscim_protocol_boot(struct labscim_protocol_boot* msg)
 {
-	struct contiki_node_setup* cns = (struct contiki_node_setup*)msg->message;
-	memcpy((void*)mac_addr,(void*)cns->mac_addr,sizeof(linkaddr_t));
-	labscim_set_time(cns->startup_time);
+	gContikiNodeSetup = (struct contiki_node_setup*)msg->message;
+	memcpy((void*)mac_addr,(void*)gContikiNodeSetup->mac_addr,sizeof(linkaddr_t));
+	labscim_set_time(gContikiNodeSetup->startup_time);
 	gBootReceived = 1;
-	gIsCoordinator = cns->tsch_coordinator;
-	free(msg);
+	gIsCoordinator = gContikiNodeSetup->tsch_coordinator;
+	//free(msg); //intentional leak
 	return;
 }
 
