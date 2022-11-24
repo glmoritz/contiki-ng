@@ -15,6 +15,7 @@ struct contiki_node_setup
     uint64_t startup_time;
     uint8_t output_logs;
     uint8_t tsch_coordinator;
+    uint8_t request_downstream;
 }__attribute__((packed));
 
 

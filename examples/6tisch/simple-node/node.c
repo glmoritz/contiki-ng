@@ -76,7 +76,6 @@ uint64_t gAoIMax;
 uint64_t gAoIMin;
 uint64_t gAoIArea;
 uint64_t gNodeJoinSignal;
-uint64_t gNodeLeaveSignal;
 
 uint64_t gPacketReceivedSignal;
 
@@ -301,8 +300,7 @@ PROCESS_THREAD(node_process, ev, data)
 		gPacketGeneratedSignal = LabscimSignalRegister("TSCHUpstreamPacketGenerated");
 		gPacketLatencySignal = LabscimSignalRegister("TSCHUpstreamPacketLatency");
 		gPacketHopcountSignal = LabscimSignalRegister("TSCHUpstreamPacketHopcount");
-		gNodeJoinSignal = LabscimSignalRegister("TSCHNodeJoin");
-		gNodeLeaveSignal = LabscimSignalRegister("TSCHNodeLeave");
+		gNodeJoinSignal = LabscimSignalRegister("TSCHNodeJoin");		
 		gRTTSignal = LabscimSignalRegister("TSCHPacketRTT");
 
 		LabscimSignalSubscribe(gPacketReceivedSignal);
@@ -325,7 +323,7 @@ PROCESS_THREAD(node_process, ev, data)
 				{
 					NodeJoined = 1;
 					save_local_address();
-					LabscimSignalEmitDouble(gNodeJoinSignal,node_id);
+					LabscimSignalEmitDouble(gNodeJoinSignal,NodeJoined);
 				}
 				/* Send to DAG root */
 				LOG_INFO("Sending request %u to ", count);
@@ -342,7 +340,7 @@ PROCESS_THREAD(node_process, ev, data)
 			else if (NodeJoined && (!NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) )
 			{
 				NodeJoined = 0;
-				LabscimSignalEmitDouble(gNodeLeaveSignal,node_id);
+				LabscimSignalEmitDouble(gNodeJoinSignal,NodeJoined);
 			}
 			else
 			{

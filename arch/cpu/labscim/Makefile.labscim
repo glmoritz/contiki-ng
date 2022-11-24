@@ -43,7 +43,7 @@ endif
 #    CFLAGS += -O2
 #  endif
 #endif
-CFLAGS += -O3
+CFLAGS += -O0
 
 ifeq ($(HOST_OS),Darwin)
 AROPTS = -rc
@@ -58,7 +58,7 @@ endif
 
 LDFLAGS += -pthread
 
-MAKE_MAC ?= MAKE_MAC_NULLMAC
+MAKE_MAC ?= MAKE_MAC_CSMA
 
 ### Compilation rules
 

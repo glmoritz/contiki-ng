@@ -5,8 +5,10 @@
 #include "net/ipv6/simple-udp.h"
 #include <stdint.h>
 #include <inttypes.h>
+#include "labscim_helper.h"
 
 #include "sys/log.h"
+#include <math.h>
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
@@ -15,6 +17,45 @@
 #define UDP_SERVER_PORT	5678
 
 #define SEND_INTERVAL		  (60 * CLOCK_SECOND)
+
+clock_time_t gLastReceivedPacket=0;
+
+uint64_t gPacketGeneratedSignal;
+uint64_t gPacketLatencySignal;
+uint64_t gRTTSignal;
+uint64_t gPacketHopcountSignal;
+uint64_t gAoIMax;
+uint64_t gAoIMin;
+uint64_t gAoIArea;
+uint64_t gNodeJoinSignal;
+
+uint64_t gPacketReceivedSignal;
+
+extern uint8_t gIsCoordinator;
+
+#define MAX_NODES (256)
+uint64_t gLastRcvMsgGenerationTime[MAX_NODES];
+uint64_t gLastRcvMsgReceptionTime[MAX_NODES];
+
+struct labscim_test
+{
+	clock_time_t upstream_generation_time;
+	clock_time_t downstream_generation_time;
+	uint8_t request_number;
+} __attribute__((packed));
+
+struct signal_info
+{
+	uint64_t signature;
+	uint32_t hop_count;
+	double latency;
+	double aoi_max;
+	double aoi_min;
+	double aoi_area;	
+} __attribute__((packed));
+
+
+uint64_t gSignature;
 
 static struct simple_udp_connection udp_conn;
 static uint32_t rx_count = 0;
@@ -91,3 +132,46 @@ PROCESS_THREAD(udp_client_process, ev, data)
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
+
+void signal_arrived(struct labscim_signal* sig)
+{
+	if (sig->signal_id == gPacketReceivedSignal)
+	{
+		struct signal_info* si = (struct signal_info*)(sig->signal);		
+		if (si->signature == gSignature)
+		{
+			LabscimSignalEmitDouble(gPacketLatencySignal, si->latency);			
+			LabscimSignalEmitDouble(gPacketHopcountSignal, si->hop_count);
+			LabscimSignalEmitDouble(gAoIMin, si->aoi_min);
+			LabscimSignalEmitDouble(gAoIMax, si->aoi_max);
+			LabscimSignalEmitDouble(gAoIArea, si->aoi_area);
+		}
+	}
+	free(sig);
+}
+
+void aoi(const uip_ipaddr_t *sender_addr, const uint8_t *data, struct signal_info* si)
+{
+	struct labscim_test* lt = (struct labscim_test*)data;
+	if( gLastRcvMsgReceptionTime[ sender_addr->u8[15] ] > 0)
+	{
+		float LastAoiMin = ((float)(gLastRcvMsgReceptionTime[sender_addr->u8[15]] - gLastRcvMsgGenerationTime[sender_addr->u8[15]]))/1e6;
+		float AoIMin = (clock_time()-lt->upstream_generation_time)/1e6;
+		float AoIMax = (clock_time()-gLastRcvMsgGenerationTime[ sender_addr->u8[15] ])/1e6;
+
+		float AoIBase = ( (float)(clock_time()-gLastRcvMsgGenerationTime[ sender_addr->u8[15] ]) )/1e6;
+		float AoIArea = AoIBase * ((AoIMax + LastAoiMin)/2);	
+
+		si->aoi_max = AoIMax;
+		si->aoi_min = AoIMin;
+		si->aoi_area = AoIArea;		
+	}
+	else
+	{
+		si->aoi_max = NAN;
+		si->aoi_min = NAN;
+		si->aoi_area = NAN;		
+	}
+	gLastRcvMsgGenerationTime[ sender_addr->u8[15] ] = lt->upstream_generation_time;
+	gLastRcvMsgReceptionTime[ sender_addr->u8[15] ] = clock_time();
+}

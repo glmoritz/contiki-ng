@@ -114,6 +114,7 @@
 //#define TSCH_DEBUG_SLOT_START() tsch_log("slot start")
 //#define TSCH_DEBUG_SLOT_END() tsch_log("slot end")
 
+#define TSCH_CONF_MAX_INCOMING_PACKETS (8)
 #define QUEUEBUF_CONF_NUM 32
 #define NBR_TABLE_CONF_MAX_NEIGHBORS 100
 #define NETSTACK_MAX_ROUTE_ENTRIES 100

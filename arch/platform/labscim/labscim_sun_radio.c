@@ -440,9 +440,16 @@ channel_clear(void)
 	uint32_t sequence_number;
 	sequence_number = radio_command(gNodeOutputBuffer, CONTIKI_RADIO_PERFORM_CCA, (void*)&crcca, sizeof(struct contiki_radio_cca));
 	//channel assessment is a blocking call that takes some time. omnet must go on
-	protocol_yield(gNodeOutputBuffer);
-	resp =  (struct labscim_radio_response*)socket_wait_for_command(LABSCIM_RADIO_RESPONSE, sequence_number);
-	socket_process_all_commands();
+	do{
+		protocol_yield(gNodeOutputBuffer);
+		resp =  (struct labscim_radio_response*)socket_wait_for_command(0, 0);
+		if(resp->hdr.request_sequence_number != sequence_number)
+		{
+			//oops -> process it and pray
+			socket_process_command(resp);
+		}
+	}while(resp->hdr.request_sequence_number != sequence_number);
+	
 	if(resp->radio_response_code == CONTIKI_RADIO_CCA_RESULT)
 	{
 		ChannelIsFree = ((struct contiki_radio_cca*)resp->radio_struct)->ChannelIsFree;
