@@ -1,3 +1,6 @@
+PROJECT_SOURCEFILES += labscim_helper.c
+CFLAGS += -g
+
 CONTIKI_PROJECT = udp-client udp-server
 all: $(CONTIKI_PROJECT)
 

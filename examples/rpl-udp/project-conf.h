@@ -57,4 +57,10 @@
 #define LOG_CONF_LEVEL_MAC                         LOG_LEVEL_NONE
 #define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_NONE
 
+#define LOG_CONF_OUTPUT(...) labscim_printf(__VA_ARGS__)
+#define CSMA_CONF_SEND_SOFT_ACK 1
+
+#define CSMA_CONF_ACK_WAIT_TIME                (RTIMER_SECOND / 400)
+#define CSMA_CONF_AFTER_ACK_DETECTED_WAIT_TIME (RTIMER_SECOND / 1000)
+
 #endif /* PROJECT_CONF_H_ */

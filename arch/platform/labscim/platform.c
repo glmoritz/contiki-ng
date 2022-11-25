@@ -632,7 +632,7 @@ platform_init_stage_three()
 	process_start(&wpcap_process, NULL);
 #endif
 
-	set_global_address();
+	//set_global_address();
 
 #endif /* NETSTACK_CONF_WITH_IPV6 */
 

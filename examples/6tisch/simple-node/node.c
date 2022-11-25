@@ -284,8 +284,9 @@ PROCESS_THREAD(node_process, ev, data)
 		gAoIMin = LabscimSignalRegister("TSCHDownstreamAoIMin");
 		gAoIArea = LabscimSignalRegister("TSCHDownstreamAoIArea");		
 
-		NETSTACK_MAC.on();
 		NETSTACK_ROUTING.root_start();
+		NETSTACK_MAC.on();
+		
 
 		/* Initialize UDP connection */
 		simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,

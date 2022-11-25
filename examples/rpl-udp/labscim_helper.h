@@ -9,6 +9,8 @@
 #define EXAMPLES_6TISCH_SIMPLE_NODE_LABSCIM_HELPER_H_
 
 #include <stdint.h>
+#include "labscim_socket.h"
+#include <stdarg.h>
 
 uint64_t LabscimSignalRegister(uint8_t* signal_name);
 
@@ -18,6 +20,8 @@ void LabscimSignalEmitChar(uint64_t id, char* value, uint64_t size);
 void LabscimSignalSubscribe(uint64_t id);
 
 double LabscimExponentialRandomVariable(double mean);
+
+int labscim_printf(const char *fmt, ...);
 
 
 #endif /* EXAMPLES_6TISCH_SIMPLE_NODE_LABSCIM_HELPER_H_ */

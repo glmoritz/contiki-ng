@@ -4,7 +4,8 @@ all: $(CONTIKI_PROJECT)
 PLATFORMS_EXCLUDE = sky native
 
 CONTIKI=../../..
-#CCFLAGS += -DDEBUG -g
+CCFLAGS += -DDEBUG -g
+CFLAGS += -g
 
  # force Orchestra from command line
 MAKE_WITH_ORCHESTRA ?= 1

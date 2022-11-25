@@ -51,7 +51,8 @@ typedef struct {
     int32_t labscim_socket_connect(uint8_t* server_address, uint32_t server_port, buffer_circ_t* buf);
     uint32_t node_is_ready(buffer_circ_t* buf);
     uint32_t signal_register(buffer_circ_t* buf, uint8_t* signal_name);
-    uint32_t signal_emit(buffer_circ_t* buf, uint64_t signal_id, double value);
+    uint32_t signal_emit_double(buffer_circ_t* buf, uint64_t signal_id, double value);
+    uint32_t signal_emit_char(buffer_circ_t* buf, uint64_t signal_id, uint8_t* value, uint64_t size);
 #else
     uint32_t protocol_boot(buffer_circ_t* buf, void* message, size_t message_size);
     uint32_t time_event(buffer_circ_t* buf, uint32_t sequence_number, uint32_t time_event_id, uint64_t current_time_us);

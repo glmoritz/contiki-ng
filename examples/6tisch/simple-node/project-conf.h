@@ -69,19 +69,6 @@
 /************* Other system configuration **************/
 /*******************************************************/
 
-<<<<<<< HEAD
-/* Logging */
-#define LOG_CONF_LEVEL_RPL                         LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_TCPIP                       LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_IPV6                        LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_WARN
-#define LOG_CONF_LEVEL_MAC                         LOG_LEVEL_INFO
-/* Do not enable LOG_CONF_LEVEL_FRAMER on SimpleLink,
-   that will cause it to print from an interrupt context. */
-#ifndef CONTIKI_TARGET_SIMPLELINK
-#define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_WARN
-#endif
-=======
 ///* Logging */
 //#define LOG_CONF_LEVEL_RPL                         LOG_LEVEL_NONE
 //#define LOG_CONF_LEVEL_TCPIP                       LOG_LEVEL_NONE
@@ -99,7 +86,6 @@
 #define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_INFO
 #define LOG_CONF_LEVEL_MAC                         LOG_LEVEL_INFO
 #define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_INFO
->>>>>>> First functional version of 802.15.4g labscim simulation, based on ht…
 #define TSCH_LOG_CONF_PER_SLOT                     1
 
 
@@ -114,11 +100,16 @@
 //#define TSCH_DEBUG_SLOT_START() tsch_log("slot start")
 //#define TSCH_DEBUG_SLOT_END() tsch_log("slot end")
 
+#define RPL_CONF_WITH_DAO_ACK (1)
+#define RPL_CONF_DAO_RETRANSMISSION_TIMEOUT (60*CLOCK_SECOND)
+#define RPL_CONF_DIO_INTERVAL_MIN (12) //2^12 msg = 4096
+#define RPL_CONF_DELAY_BEFORE_LEAVING      (10 * 60 * CLOCK_SECOND)
+
 #define TSCH_CONF_MAX_INCOMING_PACKETS (8)
 #define QUEUEBUF_CONF_NUM 32
 #define NBR_TABLE_CONF_MAX_NEIGHBORS 100
-#define NETSTACK_MAX_ROUTE_ENTRIES 100
-#define UIP_CONF_UDP_CONNS 100
+#define NETSTACK_MAX_ROUTE_ENTRIES 1024
+#define UIP_CONF_UDP_CONNS 128
 
 #define TSCH_CONF_ASSOCIATION_POLL_FREQUENCY 100
 
@@ -136,5 +127,6 @@
 #define TSCH_CONF_EB_PERIOD     (4 * CLOCK_SECOND)
 #define TSCH_CONF_MAX_EB_PERIOD (4 * CLOCK_SECOND)
 
+#define LOG_CONF_OUTPUT(...) labscim_printf(__VA_ARGS__)
 
 #endif /* PROJECT_CONF_H_ */

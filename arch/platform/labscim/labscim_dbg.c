@@ -4,7 +4,7 @@
  *  Created on: 8 de jun de 2020
  *      Author: root
  */
-#include "dbg.h"
+//#include "dbg.h"
 #include "labscim_protocol.h"
 #include "labscim_socket.h"
 #include "labscim_log_levels.h"
