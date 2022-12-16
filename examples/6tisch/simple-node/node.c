@@ -85,7 +85,6 @@ extern uint8_t gIsCoordinator;
 uint64_t gLastRcvMsgGenerationTime[MAX_NODES];
 uint64_t gLastRcvMsgReceptionTime[MAX_NODES];
 
-
 /*---------------------------------------------------------------------------*/
 PROCESS(node_process, "RPL Node");
 AUTOSTART_PROCESSES(&node_process);
