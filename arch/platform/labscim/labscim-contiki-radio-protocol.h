@@ -19,7 +19,7 @@
 
 struct contiki_radio_setup
 {
-       uint32_t Power_dbm;
+       int32_t Power_dbm;
        uint32_t Bitrate_bps;
        uint32_t Frequency_Hz;
        uint32_t Bandwidth_Hz;

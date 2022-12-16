@@ -53,11 +53,11 @@
 #define LABSCIM_SUN_RADIO_BIT_RATE 50000ull
 
 ///* 1 len byte, 2 bytes CRC */
-//#define CC26XX_RADIO_PHY_OVERHEAD     3
+#define CC26XX_RADIO_PHY_OVERHEAD     3
 ///* 4 bytes preamble, 1 byte sync */
-//#define CC26XX_RADIO_PHY_HEADER_LEN   5
+#define CC26XX_RADIO_PHY_HEADER_LEN   5
 ///* The fixed data rate is 250 kbps */
-//#define CC26XX_RADIO_BIT_RATE  250000
+#define CC26XX_RADIO_BIT_RATE  250000
 
 #if LABSCIM_RADIO_SUN
 #define RADIO_PHY_HEADER_LEN LABSCIM_SUN_RADIO_PHY_HEADER_LEN
@@ -73,10 +73,19 @@
 #define TSCH_CONF_ARCH_HDR_PATH "labscim_sun_50kbps_tsch.h"
 
 #else
-#error "For now, LABSCIM_RADIO_SUN is the only option for Labscim Radio"
-//#define RADIO_PHY_HEADER_LEN CC26XX_RADIO_PHY_HEADER_LEN
-//#define RADIO_PHY_OVERHEAD   CC26XX_RADIO_PHY_OVERHEAD
-//#define RADIO_BIT_RATE       CC26XX_RADIO_BIT_RATE
+
+/* The TSCH default slot length of 10ms is too short, use custom one instead */
+#ifndef TSCH_CONF_DEFAULT_TIMESLOT_TIMING
+#define TSCH_CONF_DEFAULT_TIMESLOT_TIMING tsch_timeslot_timing_us_10000
+#endif /* TSCH_CONF_DEFAULT_TIMESLOT_TIMING */
+
+/* Symbol for the custom TSCH timeslot timing template */
+#define TSCH_CONF_ARCH_HDR_PATH "labscim_sun_50kbps_tsch.h"
+
+#define RADIO_PHY_HEADER_LEN CC26XX_RADIO_PHY_HEADER_LEN
+#define RADIO_PHY_OVERHEAD   CC26XX_RADIO_PHY_OVERHEAD
+#define RADIO_BIT_RATE       CC26XX_RADIO_BIT_RATE
+
 #endif
 
 #define RADIO_BYTE_AIR_TIME  (1000000ull / (RADIO_BIT_RATE / 8ull))

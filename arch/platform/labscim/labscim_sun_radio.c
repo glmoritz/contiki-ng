@@ -115,9 +115,6 @@
 /*---------------------------------------------------------------------------*/
 extern const prop_mode_tx_power_config_t TX_POWER_DRIVER[];
 
-/* Max and Min Output Power in dBm */
-#define OUTPUT_POWER_MAX     (TX_POWER_DRIVER[0].dbm)
-#define OUTPUT_POWER_UNKNOWN 0xFFFF
 
 /* Default TX Power - position in output_power[] */
 static const prop_mode_tx_power_config_t *tx_power_current = &TX_POWER_DRIVER[0];
@@ -198,6 +195,46 @@ static int auto_ack = 0; /* AUTO_ACK is not supported; always 0 */
 static int addr_filter = 0; /* ADDRESS_FILTER is not supported; always 0 */
 static int send_on_cca = (LABSCIM_TRANSMIT_ON_CCA != 0);
 
+//*2.4GHz power*//
+/*---------------------------------------------------------------------------*/
+/* TX Power dBm lookup table. Values from SmartRF Studio v1.16.0 */
+typedef struct output_config {
+  radio_value_t power;
+  uint8_t txpower_val;
+} output_config_t;
+
+static const output_config_t output_power[] = {
+  {  7, 0xFF },
+  {  5, 0xED },
+  {  3, 0xD5 },
+  {  1, 0xC5 },
+  {  0, 0xB6 },
+  { -1, 0xB0 },
+  { -3, 0xA1 },
+  { -5, 0x91 },
+  { -7, 0x88 },
+  { -9, 0x72 },
+  {-11, 0x62 },
+  {-13, 0x58 },
+  {-15, 0x42 },
+  {-24, 0x00 },
+};
+
+#define OUTPUT_CONFIG_COUNT (sizeof(output_power) / sizeof(output_config_t))
+
+/* Max and Min Output Power in dBm */
+#ifdef LABSCIM_RADIO_SUN
+	/* Max and Min Output Power in dBm */
+	#define OUTPUT_POWER_MAX     (TX_POWER_DRIVER[0].dbm)	
+#else
+	#define OUTPUT_POWER_MIN    (output_power[OUTPUT_CONFIG_COUNT - 1].power)
+	#define OUTPUT_POWER_MAX    (output_power[0].power)
+#endif
+#define OUTPUT_POWER_UNKNOWN 0xFFFF
+
+/*------------*/
+
+
 PROCESS(labscim_radio_process, "labscim radio process");
 
 //labscim-radio-protocol-functions
@@ -268,7 +305,7 @@ radio_signal_strength_last(void)
 int
 radio_signal_strength_current(void)
 {
-	return simSignalStrength;
+	return simSignalStrength/100;
 }
 /*---------------------------------------------------------------------------*/
 int
@@ -334,14 +371,26 @@ radio_tx_off(void)
 static uint8_t
 get_channel(void)
 {
-  return (uint8_t)(((float)gRadioParameters.Frequency_Hz -(float)DOT_15_4G_CHAN0_FREQUENCY)/(float)DOT_15_4G_CHANNEL_SPACING);
+	#ifdef LABSCIM_RADIO_SUN
+  		return (uint8_t)(((float)(gRadioParameters.Frequency_Hz)/1000 -(float)DOT_15_4G_CHAN0_FREQUENCY)/(float)DOT_15_4G_CHANNEL_SPACING);
+	#else
+		return 11+(uint8_t)(((float)(gRadioParameters.Frequency_Hz)/1000 -(float)DOT_15_4_CHAN0_FREQUENCY)/(float)DOT_15_4_CHAN_SPACING);
+	#endif
 }
 /*---------------------------------------------------------------------------*/
 static void
 set_channel(uint8_t channel)
 {
   uint32_t new_freq;
-  new_freq = (DOT_15_4G_CHAN0_FREQUENCY + (channel * DOT_15_4G_CHANNEL_SPACING))*1000;
+  #ifdef LABSCIM_RADIO_SUN
+  	new_freq = (DOT_15_4G_CHAN0_FREQUENCY + (channel * DOT_15_4G_CHANNEL_SPACING))*1000;
+  #else
+	if((channel>=11)||(channel <= 26))
+	{
+		new_freq = (DOT_15_4_CHAN0_FREQUENCY + ((channel-11) * DOT_15_4_CHAN_SPACING))*1000;
+	}
+  #endif
+  
   if(new_freq != gRadioParameters.Frequency_Hz)
   {
 	  gRadioSetupPending = 1;
@@ -367,31 +416,56 @@ get_tx_power_array_last_element(void)
 static radio_value_t
 get_tx_power(void)
 {
-  return tx_power_current->dbm;
+	#ifdef LABSCIM_RADIO_SUN
+  		return tx_power_current->dbm;
+	#else
+		return gRadioParameters.Power_dbm;
+	#endif
 }
 
 
 static void
 set_tx_power(radio_value_t power)
 {
-  int i;
-
-  for(i = get_tx_power_array_last_element(); i >= 0; --i) {
-    if(power <= TX_POWER_DRIVER[i].dbm) {
-      /*
-       * Merely save the value. It will be used in all subsequent usages of
-       * CMD_PROP_RADIO_DIV_SETP, including one immediately after this function
-       * has returned
-       */
-    	if(gRadioParameters.Power_dbm != (uint32_t)tx_power_current->dbm)
-    	{
-    		tx_power_current = &TX_POWER_DRIVER[i];
-    		gRadioParameters.Power_dbm = (uint32_t)tx_power_current->dbm;
-    		gRadioSetupPending = 1;
-    	}
-      return;
-    }
-  }
+  	int i;
+ 	#ifdef LABSCIM_RADIO_SUN
+		for(i = get_tx_power_array_last_element(); i >= 0; --i) {
+			if(power <= TX_POWER_DRIVER[i].dbm) {
+			/*
+			* Merely save the value. It will be used in all subsequent usages of
+			* CMD_PROP_RADIO_DIV_SETP, including one immediately after this function
+			* has returned
+			*/
+				if(gRadioParameters.Power_dbm != (int32_t)tx_power_current->dbm)
+				{
+					tx_power_current = &TX_POWER_DRIVER[i];
+					gRadioParameters.Power_dbm = (int32_t)tx_power_current->dbm;
+					gRadioSetupPending = 1;
+				}
+				return;
+			}
+		}
+	#else
+			/*---------------------------------------------------------------------------*/
+			/*
+			* Set TX power to 'at least' power dBm
+			* This works with a lookup table. If the value of 'power' does not exist in
+			* the lookup table, TXPOWER will be set to the immediately higher available
+			* value
+			*/					
+			for (i = OUTPUT_CONFIG_COUNT - 1; i >= 0; --i)
+			{
+				if (power <= output_power[i].power)
+				{
+					if (gRadioParameters.Power_dbm != (int32_t)output_power[i].power)
+					{						
+						gRadioParameters.Power_dbm = (int32_t)output_power[i].power;
+						gRadioSetupPending = 1;
+					}
+					return;					
+				}
+			}
+	#endif
 }
 
 
@@ -649,12 +723,22 @@ init(void)
 	labscim_ll_init_list(&gReceivedPackets);
 	labscim_ll_init_list(&gOutboundPackets);
 
-	gRadioParameters.Bandwidth_Hz = DOT_15_4G_CHANNEL_SPACING*1000;
-	gRadioParameters.Bitrate_bps = DOT_15_4G_SYMBOLRATE;
-	gRadioParameters.Power_dbm = (uint32_t)tx_power_current->dbm;
-	set_channel(IEEE802154_DEFAULT_CHANNEL);
-	gRadioSetupPending = 1;
-	radio_setup();
+	#ifdef LABSCIM_RADIO_SUN
+		gRadioParameters.Bandwidth_Hz = DOT_15_4G_CHANNEL_SPACING*1000;
+		gRadioParameters.Bitrate_bps = DOT_15_4G_SYMBOLRATE;
+		gRadioParameters.Power_dbm = (int32_t)tx_power_current->dbm;
+		set_channel(IEEE802154_DEFAULT_CHANNEL);
+		gRadioSetupPending = 1;
+		radio_setup();
+	#else	
+		gRadioParameters.Bandwidth_Hz = DOT_15_4_TX_BW*1000;
+		gRadioParameters.Bitrate_bps = DOT_15_4_SYMBOLRATE;
+		gRadioParameters.Power_dbm = (int32_t)output_power[0].power;
+		set_channel(IEEE802154_DEFAULT_CHANNEL);
+		gRadioSetupPending = 1;
+		radio_setup();
+	#endif
+
 
 	process_start(&labscim_radio_process, NULL);
 	return 1;
@@ -690,7 +774,7 @@ get_value(radio_param_t param, radio_value_t *value)
 		return RADIO_RESULT_OK;
 	case RADIO_PARAM_RSSI:
 		/*TODO: check how to do it on omnet */
-		*value = -90 + simRadioChannel - 11;
+		*value = simSignalStrength/100;
 		return RADIO_RESULT_OK;
 	case RADIO_CONST_MAX_PAYLOAD_LEN:
 		*value = (radio_value_t)LABSCIM_RADIO_BUFSIZE;
@@ -702,16 +786,29 @@ get_value(radio_param_t param, radio_value_t *value)
 		*value = get_tx_power();
 		return RADIO_RESULT_OK;
 	case RADIO_CONST_CHANNEL_MIN:
-		*value = 0;
+		#ifdef LABSCIM_RADIO_SUN
+			*value = 0;
+		#else
+			*value = 11;
+		#endif
 		return RADIO_RESULT_OK;
 	case RADIO_CONST_CHANNEL_MAX:
 		*value = DOT_15_4G_CHANNEL_MAX;
 		return RADIO_RESULT_OK;
 	case RADIO_CONST_TXPOWER_MIN:
-		*value = TX_POWER_DRIVER[get_tx_power_array_last_element()].dbm;
+		#ifdef LABSCIM_RADIO_SUN
+			*value = TX_POWER_DRIVER[get_tx_power_array_last_element()].dbm;
+		#else
+			*value = (int32_t)output_power[OUTPUT_CONFIG_COUNT - 1].power;
+		#endif
 		return RADIO_RESULT_OK;
 	case RADIO_CONST_TXPOWER_MAX:
-		*value = OUTPUT_POWER_MAX;
+		#ifdef LABSCIM_RADIO_SUN
+			*value = OUTPUT_POWER_MAX;
+		#else
+			*value = (int32_t)output_power[0].power;
+		#endif
+		
 		return RADIO_RESULT_OK;
 	default:
 		return RADIO_RESULT_NOT_SUPPORTED;
@@ -749,9 +846,15 @@ set_value(radio_param_t param, radio_value_t value)
 		set_send_on_cca((value & RADIO_TX_MODE_SEND_ON_CCA) != 0);
 		return RADIO_RESULT_OK;
 	case RADIO_PARAM_CHANNEL:
-	    if(value < 0 || value > DOT_15_4G_CHANNEL_MAX) {
-	      return RADIO_RESULT_INVALID_VALUE;
-	    }
+		#ifdef LABSCIM_RADIO_SUN
+			if(value < 0 || value > DOT_15_4G_CHANNEL_MAX) {
+			return RADIO_RESULT_INVALID_VALUE;
+			}
+		#else
+			if(value < 11 || value > 26) {
+			return RADIO_RESULT_INVALID_VALUE;
+			}
+		#endif
 	    if(get_channel() == (uint8_t)value) {
 	      /* We already have that very same channel configured.
 	       * Nothing to do here. */
@@ -761,9 +864,17 @@ set_value(radio_param_t param, radio_value_t value)
 	    radio_setup();
 	    return RADIO_RESULT_OK;
 	case RADIO_PARAM_TXPOWER:
-		if(value < TX_POWER_DRIVER[get_tx_power_array_last_element()].dbm || value > OUTPUT_POWER_MAX) {
-			return RADIO_RESULT_INVALID_VALUE;
-		}
+		#ifdef LABSCIM_RADIO_SUN
+				if (value < TX_POWER_DRIVER[get_tx_power_array_last_element()].dbm || value > OUTPUT_POWER_MAX)
+				{
+					return RADIO_RESULT_INVALID_VALUE;
+				}
+		#else
+				if (value < (int32_t)output_power[OUTPUT_CONFIG_COUNT - 1].power || value > (int32_t)output_power[0].power)
+				{
+					return RADIO_RESULT_INVALID_VALUE;
+				}
+		#endif
 		set_tx_power(value);
 		radio_setup();
 		return RADIO_RESULT_OK;
@@ -809,4 +920,3 @@ const struct radio_driver labscim_sun_radio_driver =
 		set_object
 };
 /*---------------------------------------------------------------------------*/
-

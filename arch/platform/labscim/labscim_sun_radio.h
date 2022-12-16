@@ -47,6 +47,13 @@
 #include "labscim_protocol.h"
 #include "dot-15-4g.h"
 
+#define DOT_15_4_CHAN0_FREQUENCY 2405000
+#define DOT_15_4_CHAN_SPACING 5000
+#define DOT_15_4_TX_BW 2800
+#define DOT_15_4_SYMBOLRATE 250000
+		
+
+
 #ifdef LABSCIM_CONF_TRANSMIT_ON_CCA
 #define LABSCIM_TRANSMIT_ON_CCA LABSCIM_CONF_TRANSMIT_ON_CCA
 #else
