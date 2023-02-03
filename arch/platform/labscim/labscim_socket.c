@@ -26,11 +26,11 @@
 
 //internal processing functions
 static void labscim_buffer_process(buffer_circ_t* buf,struct labscim_ll* CommandsToExecute);
-static size_t labscim_buffer_peek(buffer_circ_t* buf,void *data, size_t size);
+static size_t labscim_buffer_peek(buffer_circ_t* buf,char *data, size_t size);
 static inline size_t labscim_buffer_available(buffer_circ_t* buf);
 static inline size_t labscim_buffer_used(buffer_circ_t* buf);
-static int32_t labscim_buffer_retrieve(buffer_circ_t* buf,void *data, uint32_t size);
-static void labscim_socket_send(buffer_circ_t* buf, void* data, size_t size);
+static int32_t labscim_buffer_retrieve(buffer_circ_t* buf,char *data, uint32_t size);
+static void labscim_socket_send(buffer_circ_t* buf, char* data, size_t size);
 static void labscim_buffer_purge(buffer_circ_t* buf);
 static inline uint32_t labscim_protocol_get_new_sequence_number();
 static void* labscim_map_shared_memory(char* memory_name, size_t memory_size, uint8_t clear);
@@ -212,7 +212,7 @@ uint32_t node_is_ready(buffer_circ_t* buf)
     rd.hdr.message_size = sizeof(struct labscim_node_is_ready);
     rd.hdr.sequence_number = labscim_protocol_get_new_sequence_number();
     rd.hdr.request_sequence_number = 0;
-    labscim_socket_send(buf, (void *)&rd, sizeof(struct labscim_node_is_ready));
+    labscim_socket_send(buf, (char *)&rd, sizeof(struct labscim_node_is_ready));
     return rd.hdr.sequence_number;
 }
 
@@ -224,7 +224,7 @@ uint32_t protocol_yield(buffer_circ_t* buf)
 	py.hdr.message_size = sizeof(struct labscim_protocol_yield);
 	py.hdr.sequence_number = labscim_protocol_get_new_sequence_number();
 	py.hdr.request_sequence_number = 0;
-	labscim_socket_send(buf, (void *)&py, sizeof(struct labscim_protocol_yield));
+	labscim_socket_send(buf, (char *)&py, sizeof(struct labscim_protocol_yield));
 	return py.hdr.sequence_number;
 }
 
@@ -239,7 +239,7 @@ uint32_t set_time_event(buffer_circ_t* buf, uint32_t time_event_id, uint16_t is_
 	ste.time_event_id = time_event_id;
 	ste.is_relative = is_relative?1:0;
 	ste.time_us = time_us;
-	labscim_socket_send(buf, (void *)&ste, sizeof(struct labscim_set_time_event));
+	labscim_socket_send(buf, (char *)&ste, sizeof(struct labscim_set_time_event));
 	return ste.hdr.sequence_number;
 }
 
@@ -252,7 +252,7 @@ uint32_t cancel_time_event(buffer_circ_t* buf, uint32_t cancel_sequence_number)
 	cte.hdr.sequence_number = labscim_protocol_get_new_sequence_number();
 	cte.hdr.request_sequence_number = 0;
 	cte.cancel_sequence_number = cancel_sequence_number;
-	labscim_socket_send(buf, (void *)&cte, sizeof(struct labscim_cancel_time_event));
+	labscim_socket_send(buf, (char *)&cte, sizeof(struct labscim_cancel_time_event));
 	return cte.hdr.sequence_number;
 }
 
@@ -265,7 +265,7 @@ uint32_t signal_subscribe(buffer_circ_t* buf, uint64_t signal_id)
 	ss.hdr.sequence_number = labscim_protocol_get_new_sequence_number();
 	ss.hdr.request_sequence_number = 0;
 	ss.signal_id = signal_id;
-	labscim_socket_send(buf, (void *)&ss, sizeof(struct labscim_signal_subscribe));
+	labscim_socket_send(buf, (char *)&ss, sizeof(struct labscim_signal_subscribe));
 	return ss.hdr.sequence_number;
 }
 
@@ -336,7 +336,7 @@ uint32_t signal_emit_double(buffer_circ_t* buf, uint64_t signal_id, double value
 	se.hdr.request_sequence_number = 0;
 	se.signal_id = signal_id;
 	se.value = value;
-	labscim_socket_send(buf, (void *)&se, sizeof(struct labscim_signal_emit_double));
+	labscim_socket_send(buf, (char *)&se, sizeof(struct labscim_signal_emit_double));
 	return se.hdr.sequence_number;
 }
 
@@ -403,7 +403,7 @@ uint32_t get_random(buffer_circ_t* buf, uint8_t distribution_type, union random_
 	gr.param_1 = param_1;
 	gr.param_2 = param_2;
 	gr.param_3 = param_3;	
-	labscim_socket_send(buf, (void *)&gr, sizeof(struct labscim_get_random));
+	labscim_socket_send(buf, (char *)&gr, sizeof(struct labscim_get_random));
 	return gr.hdr.sequence_number;
 }
 
@@ -460,7 +460,7 @@ uint32_t end_simulation(buffer_circ_t* buf)
     ret = labscim_protocol_get_new_sequence_number();
     le->hdr.sequence_number = ret;
     le->hdr.request_sequence_number = 0;
-    labscim_socket_send(buf, (void *)le, sizeof(struct labscim_end));
+    labscim_socket_send(buf, (char *)le, sizeof(struct labscim_end));
     free(le);
     return ret;
 }
@@ -483,7 +483,7 @@ uint32_t protocol_boot(buffer_circ_t* buf, void* message, size_t message_size)
 	pb->hdr.sequence_number = ret;
 	pb->hdr.request_sequence_number = 0;
 	memcpy(pb->message, message, message_size);
-	labscim_socket_send(buf, (void *)pb, FIXED_SIZEOF_STRUCT_LABSCIM_PROTOCOL_BOOT + message_size);
+	labscim_socket_send(buf, (char *)pb, FIXED_SIZEOF_STRUCT_LABSCIM_PROTOCOL_BOOT + message_size);
 	free(pb);
 	return ret;
 }
@@ -498,7 +498,7 @@ uint32_t time_event(buffer_circ_t* buf, uint32_t sequence_number, uint32_t time_
 	te.hdr.request_sequence_number = sequence_number;
 	te.time_event_id = time_event_id;
 	te.current_time_us = current_time_us;
-	labscim_socket_send(buf, (void *)&te, sizeof(struct labscim_time_event));
+	labscim_socket_send(buf, (char *)&te, sizeof(struct labscim_time_event));
 	return te.hdr.sequence_number;
 }
 
@@ -522,7 +522,7 @@ uint32_t send_signal(buffer_circ_t* buf,uint64_t signal, uint64_t current_time, 
     sig->signal_size = signal_struct_len;
     sig->current_time = current_time;
     memcpy(sig->signal, signal_struct, signal_struct_len);
-    labscim_socket_send(buf, (void *)sig, FIXED_SIZEOF_STRUCT_LABSCIM_SIGNAL + signal_struct_len);
+    labscim_socket_send(buf, (char *)sig, FIXED_SIZEOF_STRUCT_LABSCIM_SIGNAL + signal_struct_len);
     free(sig);
     return seq;
 }
@@ -547,7 +547,7 @@ uint32_t radio_response(buffer_circ_t* buf, uint16_t radio_response, uint64_t cu
 	rr->radio_response_code = radio_response;
 	rr->current_time = current_time;
 	memcpy(rr->radio_struct, radio_struct, radio_struct_len);
-	labscim_socket_send(buf, (void *)rr, FIXED_SIZEOF_STRUCT_LABSCIM_RADIO_RESPONSE + radio_struct_len);
+	labscim_socket_send(buf, (char *)rr, FIXED_SIZEOF_STRUCT_LABSCIM_RADIO_RESPONSE + radio_struct_len);
 	free(rr);
 	return sequence_number;
 }
@@ -561,7 +561,7 @@ uint32_t signal_register_response(buffer_circ_t* buf, uint32_t sequence_number, 
 	rr.hdr.sequence_number = labscim_protocol_get_new_sequence_number();
 	rr.hdr.request_sequence_number = sequence_number;
 	rr.signal_id = signal_id;
-	labscim_socket_send(buf, (void *)&rr, sizeof(struct labscim_signal_register_response));
+	labscim_socket_send(buf, (char *)&rr, sizeof(struct labscim_signal_register_response));
 	return rr.hdr.sequence_number;
 }
 
@@ -574,7 +574,7 @@ uint32_t send_random(buffer_circ_t* buf, union random_number result, uint64_t se
 	grr.hdr.sequence_number = labscim_protocol_get_new_sequence_number();
 	grr.hdr.request_sequence_number = sequence_number;
 	grr.result = result;
-	labscim_socket_send(buf, (void *)&grr, sizeof(struct labscim_signal_get_random_response));
+	labscim_socket_send(buf, (char *)&grr, sizeof(struct labscim_signal_get_random_response));
 	return grr.hdr.sequence_number;
 }
 
@@ -754,7 +754,7 @@ void labscim_cmd_log(void* data, char* ident)
 }
 #endif
 
-static void labscim_socket_send(buffer_circ_t* buf, void* data, size_t size)
+static void labscim_socket_send(buffer_circ_t* buf, char* data, size_t size)
 {
 	size_t written=0;
 #ifdef LABSCIM_LOG_COMMANDS
@@ -787,7 +787,7 @@ static void labscim_socket_send(buffer_circ_t* buf, void* data, size_t size)
 #endif
 }
 
-size_t labscim_buffer_direct_input(buffer_circ_t* buf, void* data, size_t size)
+size_t labscim_buffer_direct_input(buffer_circ_t* buf, char* data, size_t size)
 {
 	size_t max_writesize;
 	size_t write_size;
@@ -896,7 +896,7 @@ static void labscim_buffer_purge(buffer_circ_t* buf)
 			}
 			else
 			{
-				labscim_buffer_peek(buf, &magic,sizeof(uint32_t));
+				labscim_buffer_peek(buf, (char*)&magic,sizeof(uint32_t));
 				if(magic==labscim_magic_number)
 				{
 					break;
@@ -923,7 +923,7 @@ static void labscim_buffer_process(buffer_circ_t* buf, struct labscim_ll* Comman
 
 	while(bytes_available >= sizeof(struct labscim_protocol_header))
 	{
-		if(labscim_buffer_peek(buf, &hdr,sizeof(hdr))==sizeof(hdr))
+		if(labscim_buffer_peek(buf, (char*)&hdr,sizeof(hdr))==sizeof(hdr))
 		{
 			if(hdr.labscim_protocol_magic_number != LABSCIM_PROTOCOL_MAGIC_NUMBER)
 			{
@@ -935,13 +935,13 @@ static void labscim_buffer_process(buffer_circ_t* buf, struct labscim_ll* Comman
 				{
 					//this message is too big to be received
 					uint8_t byte;
-					labscim_buffer_retrieve(buf, &byte, sizeof(uint8_t));
+					labscim_buffer_retrieve(buf, (char*)&byte, sizeof(uint8_t));
 					labscim_buffer_purge(buf);
 				}
 				if(bytes_available >= hdr.message_size)
 				{
-					void* msg;
-					msg = malloc(hdr.message_size);
+					char* msg;
+					msg = (char*)malloc(hdr.message_size);
 					if(msg == NULL)
 					{
 						perror("\nMalloc error\n");
@@ -964,7 +964,7 @@ static void labscim_buffer_process(buffer_circ_t* buf, struct labscim_ll* Comman
 	return;
 }
 
-static size_t labscim_buffer_peek(buffer_circ_t* buf, void *data, size_t size)
+static size_t labscim_buffer_peek(buffer_circ_t* buf, char* data, size_t size)
 {
 	if(buf->mem->data == NULL) {
 		/* check your buffer parameter */
@@ -986,7 +986,7 @@ static size_t labscim_buffer_peek(buffer_circ_t* buf, void *data, size_t size)
 	return size;
 }
 
-int32_t labscim_buffer_retrieve(buffer_circ_t* buf,void *data, uint32_t size)
+int32_t labscim_buffer_retrieve(buffer_circ_t* buf,char *data, uint32_t size)
 {
 	size_t rd = labscim_buffer_peek(buf, data,size);
 	buf->mem->level -= rd;

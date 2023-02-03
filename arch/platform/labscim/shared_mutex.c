@@ -49,7 +49,7 @@ shared_mutex_t shared_mutex_init(char *name, char clear)
   }
 
   // Map pthread mutex into the shared memory.
-  void *addr = mmap(
+  char* addr = (char*)mmap(
     NULL,
 	sizeof(pthread_mutex_t)+2*sizeof(pthread_cond_t),
     PROT_READ|PROT_WRITE,

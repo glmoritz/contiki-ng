@@ -68,7 +68,7 @@ void labscim_set_send_command_callback(void (*Callback)(void) );
 
 int32_t labscim_socket_disconnect(buffer_circ_t* buf);
 void labscim_socket_handle_input(buffer_circ_t* buf, struct labscim_ll* CommandsToExecute);
-size_t labscim_buffer_direct_input(buffer_circ_t* buf, void* data, size_t size);
+size_t labscim_buffer_direct_input(buffer_circ_t* buf, char* data, size_t size);
 void labscim_buffer_init(buffer_circ_t* buf, char* buffer_name, size_t MemorySize, uint8_t clear);
 void labscim_buffer_deinit(buffer_circ_t* buf, uint8_t del);
 
