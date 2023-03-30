@@ -245,6 +245,13 @@ void labscim_radio_incoming_command(struct labscim_radio_response* resp)
 	{
 		case CONTIKI_RADIO_PACKET_RECEIVED:
 		{
+			//clear the received packet list
+			void *old_pkt = labscim_ll_pop_front(&gReceivedPackets);
+			while (old_pkt != NULL)
+			{
+				free(old_pkt);
+				old_pkt = labscim_ll_pop_front(&gReceivedPackets);
+			}
 			//just append to the list and wait for processing
 			labscim_ll_insert_at_back(&gReceivedPackets, (void*) resp);
 			process_poll(&labscim_radio_process);
@@ -645,6 +652,14 @@ prepare_packet(const void *data, unsigned short len)
 		perror("\nMalloc error \n");
 		return RADIO_TX_ERR;
 	}
+	//clear OutboundPacket list
+	void* old_pkt = labscim_ll_pop_front(&gOutboundPackets);
+	while(old_pkt!=NULL)
+	{
+		free(old_pkt);
+		old_pkt = labscim_ll_pop_front(&gOutboundPackets);
+	}
+	//insert the new packet
 	pkt->MessageSize_bytes = len;
 	memcpy(pkt->Message,data,len);
 	labscim_ll_insert_at_back(&gOutboundPackets,(void*)pkt);

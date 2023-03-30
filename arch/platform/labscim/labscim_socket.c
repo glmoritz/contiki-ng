@@ -745,6 +745,77 @@ void labscim_cmd_log(void* data, char* ident)
 		fprintf(string,"seq%7d\tRADIO_COMMAND\tsize:%4d\tcmd:0x%04x",cmd->sequence_number,cmd->message_size,rc->radio_command);
 		break;
 	}
+	case LABSCIM_NODE_IS_READY:
+	{
+		struct labscim_node_is_ready *re = (struct labscim_node_is_ready *)cmd;
+		fprintf(string, "seq%7d\tLABSCIM_NODE_IS_READY\tsize:%4d", cmd->sequence_number, cmd->message_size);
+		break;
+	}
+
+	case LABSCIM_SIGNAL:
+	{
+		struct labscim_signal *ls = (struct labscim_signal *)cmd;
+		fprintf(string, "seq%7d\tLABSCIM_SIGNAL\tsize:%4d\tsignal:0x%04d", cmd->sequence_number, cmd->message_size, ls->signal_id);
+		break;
+	}
+
+	case LABSCIM_SIGNAL_REGISTER:
+	{
+		struct labscim_signal_register *sr = (struct labscim_signal_register *)cmd;
+		fprintf(string, "seq%7d\tLABSCIM_SIGNAL_REGISTER\tsize:%4d\tname:%s", cmd->sequence_number, cmd->message_size, sr->signal_name);
+		break;
+	}
+
+	case LABSCIM_SIGNAL_EMIT_DOUBLE:
+	{
+		struct labscim_signal_emit_double *ed = (struct labscim_signal_emit_double *)cmd;
+		fprintf(string, "seq%7d\tLABSCIM_SIGNAL_EMIT_DOUBLE\tsize:%4d\tid:0x%04d\tvalue:%f", cmd->sequence_number, cmd->message_size, ed->signal_id, ed->value);
+		break;
+	}
+
+	case LABSCIM_SIGNAL_EMIT_CHAR:
+	{
+		struct labscim_signal_emit_char *ec = (struct labscim_signal_emit_char *)cmd;
+		fprintf(string, "seq%7d\tLABSCIM_SIGNAL_EMIT_CHAR\tsize:%4d\tid:%4d", cmd->sequence_number, cmd->message_size, ec->signal_id);
+		break;
+	}
+
+	case LABSCIM_SIGNAL_SUBSCRIBE:
+	{
+		struct labscim_signal_subscribe *ss = (struct labscim_signal_subscribe *)cmd;
+		fprintf(string, "seq%7d\tLABSCIM_SIGNAL_SUBSCRIBE\tsize:%4d\tid:%4d", cmd->sequence_number, cmd->message_size, ss->signal_id);
+		break;
+	}
+
+	case LABSCIM_GET_RANDOM:
+	{
+		struct labscim_get_random *gr = (struct labscim_get_random *)cmd;
+		fprintf(string, "seq%7d\tLABSCIM_GET_RANDOM\tsize:%4d\ttype:%d", cmd->sequence_number, cmd->message_size, gr->distribution_type);
+		break;
+	}
+	case LABSCIM_END:
+	{
+		struct labscim_end *le = (struct labscim_end *)cmd;
+		fprintf(string, "seq%7d\tLABSCIM_END\tsize:%4d", cmd->sequence_number, cmd->message_size);
+		break;
+	}
+	case LABSCIM_SIGNAL_REGISTER_RESPONSE:
+	{
+		struct labscim_signal_register_response *rr = (struct labscim_signal_register_response *)cmd;
+		fprintf(string, "seq%7d\tLABSCIM_SIGNAL_REGISTER_RESPONSE\tsize:%4d\tid:%d", cmd->sequence_number, cmd->message_size, rr->signal_id);
+		break;
+	}
+	case LABSCIM_GET_RANDOM_RESPONSE:
+	{
+		struct labscim_signal_get_random_response *rr = (struct labscim_signal_get_random_response *)cmd;
+		fprintf(string, "seq%7d\tLABSCIM_GET_RANDOM_RESPONSE\tsize:%4d", cmd->sequence_number, cmd->message_size);
+		break;
+	}
+	default:
+	{
+		fprintf(string,"seq%7d\tUNKNOWN(0x%4x)\tsize:%4d\t",cmd->sequence_number,cmd->labscim_protocol_code,cmd->message_size);
+	    break;
+	}
 	}
 	if(cmd->labscim_protocol_code!=LABSCIM_PRINT_MESSAGE)
 	{
@@ -996,7 +1067,15 @@ int32_t labscim_buffer_retrieve(buffer_circ_t* buf,char *data, uint32_t size)
 
 size_t labscim_buffer_available(buffer_circ_t* buf)
 {
-	return buf->mem->size - buf->mem->level;
+    if(buf)
+    {
+        return buf->mem->size - buf->mem->level;
+    }
+    else
+    {
+        return 0;
+    }
+
 	// if(buf->mem->wr_offset >= buf->mem->rd_offset)
 	// {
 	// 	return (buf->mem->size-buf->mem->wr_offset+buf->mem->rd_offset);
@@ -1009,7 +1088,14 @@ size_t labscim_buffer_available(buffer_circ_t* buf)
 
 size_t labscim_buffer_used(buffer_circ_t* buf)
 {
-	return buf->mem->level;
+    if(buf)
+    {
+        return buf->mem->level;
+    }
+    else
+    {
+        return 0;
+    }
     //return buf->mem->size - labscim_buffer_available(buf);
 }
 

@@ -1,0 +1,28 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "makefile.configurations": [
+        {
+            "name": "contiki-ng",
+            "makeArgs": ["TARGET=native",
+            "-C ./examples/hello-world"]            
+        }
+    ],
+    "files.associations": {
+        "optional": "c",
+        "istream": "c",
+        "ostream": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "array": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "labscim_helper.h": "c",
+        "labscim_socket.h": "c",
+        "labscim_sun_radio.h": "c",
+        "uip-ds6-route.h": "c",
+        "labscim_protocol.h": "c",
+        "log.h": "c"
+    }
+}

@@ -32,6 +32,13 @@
 #include "net/netstack.h"
 #include "net/ipv6/simple-udp.h"
 #include "labscim_helper.h"
+#include "net/ipv6/uip.h"
+#include "net/ipv6/uip-ds6.h"
+#include "net/ipv6/uip-ds6-route.h"
+#include "net/ipv6/uip-sr.h"
+#include "labscim_protocol.h"
+#include "labscim_helper.h"
+
 
 #include "sys/log.h"
 #include <math.h>
@@ -81,10 +88,9 @@ struct signal_info
 
 
 uint64_t gSignature;
-
 static struct simple_udp_connection udp_conn;
-
 PROCESS(udp_server_process, "UDP server");
+
 AUTOSTART_PROCESSES(&udp_server_process);
 /*---------------------------------------------------------------------------*/
 static void
@@ -96,15 +102,46 @@ udp_rx_callback(struct simple_udp_connection *c,
          const uint8_t *data,
          uint16_t datalen)
 {
-  LOG_INFO("Received request '%.*s' from ", datalen, (char *) data);
-  LOG_INFO_6ADDR(sender_addr);
-  LOG_INFO_("\n");
-#if WITH_SERVER_REPLY
-  /* send back the same string to the client as an echo reply */
-  LOG_INFO("Sending response.\n");
-  simple_udp_sendto(&udp_conn, data, datalen, sender_addr);
+	struct labscim_test *lt = (struct labscim_test *)data;
+	struct signal_info si;
+
+	LOG_INFO("Received request '%.*s' from ", datalen, (char *)data);
+	LOG_INFO_6ADDR(sender_addr);
+	LOG_INFO_("\n");
+
+	si.latency = (clock_time() - lt->upstream_generation_time) / 1e6;
+	si.hop_count = 64 - UIP_IP_BUF->ttl + 1;
+
+	memcpy(&si.signature, sender_addr->u8 + 8, sizeof(uint64_t));
+
+	aoi(sender_addr, data, &si);
+
+	LabscimSignalEmitChar(gPacketReceivedSignal, (char *)&si, sizeof(struct signal_info));
+
+#if 1  // WITH_SERVER_REPLY
+	/* send back the same string to the client as an echo reply */
+	LOG_INFO("Sending response.\n");
+	lt->downstream_generation_time = clock_time();
+	LabscimSignalEmitDouble(gPacketGeneratedSignal,(double)(lt->downstream_generation_time)/1e6);
+	simple_udp_sendto(&udp_conn, (void*)lt, sizeof(struct labscim_test), sender_addr);
 #endif /* WITH_SERVER_REPLY */
 }
+
+static void
+save_local_address(void)
+{
+	int i;
+	uint8_t state;
+	for (i = 0; i < UIP_DS6_ADDR_NB; i++)
+	{
+		state = uip_ds6_if.addr_list[i].state;
+		if (uip_ds6_if.addr_list[i].isused && (state == ADDR_PREFERRED))
+		{
+			memcpy(&gSignature, (uip_ds6_if.addr_list[i].ipaddr).u8 + 8, sizeof(uint64_t));
+		}
+	}
+}
+
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data)
 {
@@ -112,6 +149,14 @@ PROCESS_THREAD(udp_server_process, ev, data)
 
   /* Initialize DAG root */
   NETSTACK_ROUTING.root_start();
+
+  gPacketReceivedSignal = LabscimSignalRegister("PacketReceived");
+  gPacketGeneratedSignal = LabscimSignalRegister("DownstreamPacketGenerated");
+  gPacketLatencySignal = LabscimSignalRegister("DownstreamPacketLatency");
+  gPacketHopcountSignal = LabscimSignalRegister("DownstreamPacketHopcount");
+  gAoIMax = LabscimSignalRegister("DownstreamAoIMax");
+  gAoIMin = LabscimSignalRegister("DownstreamAoIMin");
+  gAoIArea = LabscimSignalRegister("DownstreamAoIArea");
 
   /* Initialize UDP connection */
   simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,

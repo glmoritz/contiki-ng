@@ -49,6 +49,7 @@
 #include "net/routing/routing.h"
 #include "net/ipv6/simple-udp.h"
 #include "labscim_protocol.h"
+#include "labscim_contiking_setup.h"
 
 
 #include "labscim_helper.h"
@@ -79,7 +80,6 @@ uint64_t gNodeJoinSignal;
 
 uint64_t gPacketReceivedSignal;
 
-extern uint8_t gIsCoordinator;
 
 #define MAX_NODES (256)
 uint64_t gLastRcvMsgGenerationTime[MAX_NODES];
@@ -224,10 +224,8 @@ udp_client_rx_callback(struct simple_udp_connection *c,
 	memcpy(&si.signature,sender_addr->u8+8,sizeof(uint64_t));
 	aoi(sender_addr, data,&si);
 
-	LabscimSignalEmitDouble(gRTTSignal,(clock_time()-lt->upstream_generation_time)/1e6);
-	
-	LabscimSignalEmitChar(gPacketReceivedSignal, (char*) &si, sizeof(struct signal_info));
-	
+	LabscimSignalEmitDouble(gRTTSignal,(clock_time()-lt->upstream_generation_time)/1e6);	
+	LabscimSignalEmitChar(gPacketReceivedSignal, (char*) &si, sizeof(struct signal_info));	
 
 	LOG_INFO("Received response '%.*s' from ", datalen, (char *) data);
 	LOG_INFO_6ADDR(sender_addr);
@@ -238,8 +236,8 @@ udp_client_rx_callback(struct simple_udp_connection *c,
 }
 
 
+extern struct contiki_node_setup* gBootMessage;
 
-clock_time_t gBootTime;
 
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(node_process, ev, data)
@@ -252,15 +250,12 @@ PROCESS_THREAD(node_process, ev, data)
 	static uint32_t NodeJoined = 0;
 	static uip_ipaddr_t dest_ipaddr;
 	double next_message_wait_s = 0;
-	double avgSendTime_s = 15;
-
+	
 	lt.request_number = 0;
 
 	PROCESS_BEGIN();
 
-	//is_coordinator = 0;
-	gBootTime = clock_time();
-
+	
 //#if CONTIKI_TARGET_COOJA || CONTIKI_TARGET_Z1 || CONTIKI_TARGET_LABSCIM
 //	is_coordinator = (node_id == 1);
 //#endif
@@ -274,15 +269,15 @@ PROCESS_THREAD(node_process, ev, data)
 	}
 
 
-	gPacketReceivedSignal = LabscimSignalRegister("TSCHPacketReceived");
-	if(gIsCoordinator)
+	gPacketReceivedSignal = LabscimSignalRegister("PacketReceived");
+	if(gBootMessage->tsch_coordinator)
 	{
-		gPacketGeneratedSignal = LabscimSignalRegister("TSCHDownstreamPacketGenerated");
-		gPacketLatencySignal = LabscimSignalRegister("TSCHDownstreamPacketLatency");
-		gPacketHopcountSignal = LabscimSignalRegister("TSCHDownstreamPacketHopcount");
-		gAoIMax = LabscimSignalRegister("TSCHDownstreamAoIMax");
-		gAoIMin = LabscimSignalRegister("TSCHDownstreamAoIMin");
-		gAoIArea = LabscimSignalRegister("TSCHDownstreamAoIArea");		
+		gPacketGeneratedSignal = LabscimSignalRegister("DownstreamPacketGenerated");
+		gPacketLatencySignal = LabscimSignalRegister("DownstreamPacketLatency");
+		gPacketHopcountSignal = LabscimSignalRegister("DownstreamPacketHopcount");
+		gAoIMax = LabscimSignalRegister("DownstreamAoIMax");
+		gAoIMin = LabscimSignalRegister("DownstreamAoIMin");
+		gAoIArea = LabscimSignalRegister("DownstreamAoIArea");		
 
 		NETSTACK_ROUTING.root_start();
 		NETSTACK_MAC.on();
@@ -295,14 +290,14 @@ PROCESS_THREAD(node_process, ev, data)
 	}
 	else
 	{
-		gAoIMax = LabscimSignalRegister("TSCHUpstreamAoIMax");
-		gAoIMin = LabscimSignalRegister("TSCHUpstreamAoIMin");
-		gAoIArea = LabscimSignalRegister("TSCHUpstreamAoIArea");
-		gPacketGeneratedSignal = LabscimSignalRegister("TSCHUpstreamPacketGenerated");
-		gPacketLatencySignal = LabscimSignalRegister("TSCHUpstreamPacketLatency");
-		gPacketHopcountSignal = LabscimSignalRegister("TSCHUpstreamPacketHopcount");
-		gNodeJoinSignal = LabscimSignalRegister("TSCHNodeJoin");		
-		gRTTSignal = LabscimSignalRegister("TSCHPacketRTT");
+		gAoIMax = LabscimSignalRegister("UpstreamAoIMax");
+		gAoIMin = LabscimSignalRegister("UpstreamAoIMin");
+		gAoIArea = LabscimSignalRegister("UpstreamAoIArea");
+		gPacketGeneratedSignal = LabscimSignalRegister("UpstreamPacketGenerated");
+		gPacketLatencySignal = LabscimSignalRegister("UpstreamPacketLatency");
+		gPacketHopcountSignal = LabscimSignalRegister("UpstreamPacketHopcount");
+		gNodeJoinSignal = LabscimSignalRegister("NodeJoin");		
+		gRTTSignal = LabscimSignalRegister("PacketRTT");
 
 		LabscimSignalSubscribe(gPacketReceivedSignal);
 
@@ -313,7 +308,7 @@ PROCESS_THREAD(node_process, ev, data)
 				UDP_SERVER_PORT, udp_client_rx_callback);
 
 
-		next_message_wait_s = 4.0+LabscimExponentialRandomVariable(avgSendTime_s-4.0);
+		next_message_wait_s = 4.0+LabscimExponentialRandomVariable(gBootMessage->packet_generation_rate_s-4.0);
 		LOG_INFO("Next message in %d milliseconds\n", (uint64_t)(next_message_wait_s * 1000));
 		etimer_set(&periodic_timer, next_message_wait_s * CLOCK_SECOND);
 		while(1) {
@@ -349,7 +344,7 @@ PROCESS_THREAD(node_process, ev, data)
 			}
 
 			/* Add some jitter */
-			next_message_wait_s = 4+LabscimExponentialRandomVariable(avgSendTime_s-4.0);
+			next_message_wait_s = 4+LabscimExponentialRandomVariable(gBootMessage->packet_generation_rate_s-4.0);
 			LOG_INFO("Next message in %d milliseconds\n",(uint32_t)(next_message_wait_s*1000));
 			etimer_set(&periodic_timer, next_message_wait_s * CLOCK_SECOND);
 		}

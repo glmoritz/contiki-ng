@@ -16,6 +16,7 @@ struct contiki_node_setup
     uint8_t output_logs;
     uint8_t tsch_coordinator;
     uint8_t request_downstream;
+    double packet_generation_rate_s;
 }__attribute__((packed));
 
 
