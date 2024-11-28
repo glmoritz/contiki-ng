@@ -38,6 +38,13 @@
 #include "net/link-stats.h"
 #include <stdio.h>
 
+#include "labscim_protocol.h"
+#include "labscim_helper.h"
+
+uint64_t gNumTx;
+uint64_t gPacketSent;
+uint64_t gPacketReceived;
+
 /* Log configuration */
 #include "sys/log.h"
 #define LOG_MODULE "Link Stats"
@@ -137,6 +144,10 @@ link_stats_packet_sent(const linkaddr_t *lladdr, int status, int numtx)
   uint16_t packet_etx;
   uint8_t ewma_alpha;
 #endif /* !LINK_STATS_ETX_FROM_PACKET_COUNT */
+
+LabscimSignalEmitDouble(gPacketSent, (double)(status));
+LabscimSignalEmitDouble(gNumTx, (double)(numtx));
+
 
   if(status != MAC_TX_OK && status != MAC_TX_NOACK && status != MAC_TX_QUEUE_FULL) {
     /* Do not penalize the ETX when collisions or transmission errors occur. */
@@ -255,6 +266,9 @@ link_stats_input_callback(const linkaddr_t *lladdr)
 #endif /* LINK_STATS_INIT_ETX_FROM_RSSI */
   }
 
+  LabscimSignalEmitDouble(gPacketReceived, (double)(stats->etx));
+  
+
 #if LINK_STATS_PACKET_COUNTERS
   stats->cnt_current.num_packets_rx++;
 #endif
@@ -322,4 +336,9 @@ link_stats_init(void)
 {
   nbr_table_register(link_stats, NULL);
   ctimer_set(&periodic_timer, FRESHNESS_HALF_LIFE, periodic, NULL);
+
+  gNumTx = LabscimSignalRegister("PacketSentNumTx");
+  gPacketSent = LabscimSignalRegister("PacketSentStatus");
+  gPacketReceived = LabscimSignalRegister("PacketReceivedETX");
+
 }

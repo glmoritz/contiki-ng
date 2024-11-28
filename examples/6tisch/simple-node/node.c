@@ -197,7 +197,7 @@ udp_server_rx_callback(struct simple_udp_connection *c,
     LabscimSignalEmitChar(gPacketReceivedSignal, (char*) &si, sizeof(struct signal_info));
 
 
-#if 0 //WITH_SERVER_REPLY
+#if 1 //WITH_SERVER_REPLY
 	/* send back the same string to the client as an echo reply */
 	LOG_INFO("Sending response.\n");
 	lt->downstream_generation_time = clock_time();
