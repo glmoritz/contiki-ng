@@ -6,6 +6,11 @@ PLATFORMS_EXCLUDE = sky nrf52dk native simplelink
 CONTIKI=../../..
 #CCFLAGS += -DDEBUG -g
 
+# GCC >= 10 usa -fno-common por padrao; o orchestra.h de 2021 declara as regras
+# sem 'extern' e depende de common symbols. E' flag de compilador apenas — o
+# codigo-fonte do teste2 fica intacto, preservando a fidelidade.
+CFLAGS += -fcommon
+
  # force Orchestra from command line
 MAKE_WITH_ORCHESTRA ?= 1
 # force Security from command line

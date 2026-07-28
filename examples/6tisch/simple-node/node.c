@@ -323,15 +323,15 @@ PROCESS_THREAD(node_process, ev, data)
 	}
 
 
-	gPacketReceivedSignal = LabscimSignalRegister("TSCHPacketReceived");
+	gPacketReceivedSignal = LabscimSignalRegister("PacketReceived");
 	if(gIsCoordinator)
 	{
-		gPacketGeneratedSignal = LabscimSignalRegister("TSCHDownstreamPacketGenerated");
-		gPacketLatencySignal = LabscimSignalRegister("TSCHDownstreamPacketLatency");
-		gPacketHopcountSignal = LabscimSignalRegister("TSCHDownstreamPacketHopcount");
-		gAoIMax = LabscimSignalRegister("TSCHDownstreamAoIMax");
-		gAoIMin = LabscimSignalRegister("TSCHDownstreamAoIMin");
-		gAoIArea = LabscimSignalRegister("TSCHDownstreamAoIArea");		
+		gPacketGeneratedSignal = LabscimSignalRegister("DownstreamPacketGenerated");
+		gPacketLatencySignal = LabscimSignalRegister("DownstreamPacketLatency");
+		gPacketHopcountSignal = LabscimSignalRegister("DownstreamPacketHopcount");
+		gAoIMax = LabscimSignalRegister("DownstreamAoIMax");
+		gAoIMin = LabscimSignalRegister("DownstreamAoIMin");
+		gAoIArea = LabscimSignalRegister("DownstreamAoIArea");		
 
 		NETSTACK_MAC.on();
 		NETSTACK_ROUTING.root_start();
@@ -343,14 +343,14 @@ PROCESS_THREAD(node_process, ev, data)
 	}
 	else
 	{
-		gAoIMax = LabscimSignalRegister("TSCHUpstreamAoIMax");
-		gAoIMin = LabscimSignalRegister("TSCHUpstreamAoIMin");
-		gAoIArea = LabscimSignalRegister("TSCHUpstreamAoIArea");
-		gPacketGeneratedSignal = LabscimSignalRegister("TSCHUpstreamPacketGenerated");
-		gPacketLatencySignal = LabscimSignalRegister("TSCHUpstreamPacketLatency");
-		gPacketHopcountSignal = LabscimSignalRegister("TSCHUpstreamPacketHopcount");
-		gNodeJoinSignal = LabscimSignalRegister("TSCHNodeJoin");		
-		gRTTSignal = LabscimSignalRegister("TSCHPacketRTT");
+		gAoIMax = LabscimSignalRegister("UpstreamAoIMax");
+		gAoIMin = LabscimSignalRegister("UpstreamAoIMin");
+		gAoIArea = LabscimSignalRegister("UpstreamAoIArea");
+		gPacketGeneratedSignal = LabscimSignalRegister("UpstreamPacketGenerated");
+		gPacketLatencySignal = LabscimSignalRegister("UpstreamPacketLatency");
+		gPacketHopcountSignal = LabscimSignalRegister("UpstreamPacketHopcount");
+		gNodeJoinSignal = LabscimSignalRegister("NodeJoin");		
+		gRTTSignal = LabscimSignalRegister("PacketRTT");
 
 		LabscimSignalSubscribe(gPacketReceivedSignal);
 
